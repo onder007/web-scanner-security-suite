@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "404 Error Scanner",
+  "version": "1.0.0",
+  "description": "Professional Web Crawler and Error Analyzer Extension",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ]
+}
