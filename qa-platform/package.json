@@ -1,0 +1,14 @@
+{
+  "name": "qa-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "start:api": "npm run dev --workspace=@qa/api",
+    "start:frontend": "npm run dev --workspace=@qa/frontend",
+    "build:packages": "npm run build --workspaces --if-present"
+  }
+}

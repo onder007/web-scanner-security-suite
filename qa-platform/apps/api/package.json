@@ -1,0 +1,27 @@
+{
+  "name": "@qa/api",
+  "version": "1.0.0",
+  "description": "API server for QA platform",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.5.0",
+    "@qa/crawler": "*",
+    "@qa/plugins": "*",
+    "@qa/shared": "*",
+    "bullmq": "^5.7.8",
+    "cors": "^2.8.5",
+    "fastify": "^4.26.2",
+    "fastify-socket.io": "^5.1.0",
+    "ioredis": "^5.4.1",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "tsx": "^4.9.3",
+    "typescript": "^5.4.5"
+  }
+}

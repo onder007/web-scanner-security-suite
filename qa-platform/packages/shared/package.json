@@ -1,0 +1,12 @@
+{
+  "name": "@qa/shared",
+  "version": "1.0.0",
+  "description": "Shared interfaces and types",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

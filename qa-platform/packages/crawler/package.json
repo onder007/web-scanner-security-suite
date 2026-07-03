@@ -1,0 +1,17 @@
+{
+  "name": "@qa/crawler",
+  "version": "1.0.0",
+  "description": "Crawler engine using Crawlee",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "crawlee": "^3.9.0",
+    "playwright": "^1.43.0",
+    "@qa/shared": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
