@@ -15,8 +15,45 @@ The scanner leverages Chrome's **Manifest V3 Background Service Workers** to per
 
 ## Architecture & Data Flow
 
+### Process Flow
+The extension uses a background service worker to fetch and process links concurrently, bypassing standard CORS limitations.
+
+```mermaid
+sequenceDiagram
+    participant UI as Dashboard (React)
+    participant SW as Background Worker
+    participant Web as Target Website
+
+    UI->>SW: Start Scan (URL)
+    activate SW
+    SW->>Web: Fetch HTML Content
+    Web-->>SW: Raw HTML Response
+    SW->>SW: Extract Links & Queue
+    SW-->>UI: Real-time Metrics & Logs
+    SW->>Web: Process Queued Links (Concurrent)
+    deactivate SW
+```
+
+### System Components
+
+```mermaid
+graph TD
+    A[Dashboard UI] -->|Commands| B(Background Worker)
+    B -->|Concurrent Requests| C[Target URLs]
+    C -->|HTTP Responses| B
+    B -->|Link Parser| D[Processing Queue]
+    D -->|Next Batch| B
+    B -->|State Sync| A
+    A -->|Export| E[CSV / JSON]
+    
+    style A fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
+    style B fill:#0f172a,stroke:#10b981,stroke-width:2px,color:#fff
+    style C fill:#333,stroke:#f59e0b,stroke-width:2px,color:#fff
+    style D fill:#475569,stroke:#a855f7,stroke-width:2px,color:#fff
+```
+
 1. **Popup Interface (`src/App.tsx`):**
-   - Serves as the control panel for the user.
+   - Main control dashboard.
    - Sends `START_SCAN`, `PAUSE_SCAN`, and `RESUME_SCAN` messages to the Background Service Worker via `chrome.runtime.sendMessage`.
    - Listens to real-time progress updates (scanned URLs, broken links, queue size) via `chrome.runtime.onMessage`.
 
