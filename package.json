@@ -1,5 +1,5 @@
 {
-  "name": "404-error-scanner",
+  "name": "dead-links-scanner",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
