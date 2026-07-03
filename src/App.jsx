@@ -92,8 +92,8 @@ function App() {
     <div className="app-container" style={{ padding: '16px' }}>
       <header className="glass-panel animate-slide-up header-panel">
         <div className="header-content">
-          <h1>404 Error Scanner</h1>
-          <p className="subtitle">Chrome Extension Crawler</p>
+          <h1>Dead Links Scanner</h1>
+          <p className="subtitle">Browser Extension Crawler</p>
         </div>
         
         <div className="control-bar">

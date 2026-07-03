@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "404 Error Scanner",
+  "name": "Dead Links Scanner",
   "version": "1.0.0",
-  "description": "Professional Web Crawler and Error Analyzer Extension",
+  "description": "Professional Web Crawler and Error Analyzer Browser Extension",
   "action": {
     "default_popup": "index.html"
   },
