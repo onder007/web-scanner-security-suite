@@ -1,4 +1,31 @@
 // background.js - Chrome Extension Service Worker
+import { analyzeSecurityHeaders } from './security/headerDetector.js';
+import { analyzeCookies } from './security/cookieDetector.js';
+import { detectMixedContent } from './security/mixedContentDetector.js';
+import { detectSensitiveResources } from './security/sensitiveResourceDetector.js';
+import {
+  detectSqliRiskFromParams,
+  detectSqliRiskFromForms,
+  detectXssRiskFromScripts,
+  detectXssRiskFromParams,
+} from './security/passiveInputDetector.js';
+import { createFinding, sortFindings, summarizeFindings } from './security/findingsModel.js';
+// ── New Detector Imports ──────────────────────────────────────────────────────
+import { detectVulnerableLibraries, filterScriptUrls } from './security/jsLibraryDetector.js';
+import { detectHeaderDisclosure, detectMetaDisclosure, detectDnsPrefetchLeakage } from './security/infoDisclosureDetector.js';
+import { analyzeCors } from './security/corsDetector.js';
+import { detectMissingSri } from './security/sriDetector.js';
+import { detectTabnapping } from './security/tabnappingDetector.js';
+import { detectOpenRedirect, detectOpenRedirectInForms } from './security/openRedirectDetector.js';
+import { analyzeFormSecurity } from './security/formSecurityDetector.js';
+import { analyzeRobotsTxt, checkSecurityTxt, checkHttpToHttpsRedirect } from './security/robotsTxtAnalyzer.js';
+// ── Advanced Enterprise Detectors ─────────────────────────────────────────────
+import { detectSecrets } from './security/secretDetector.js';
+import { detectWaf } from './security/wafDetector.js';
+import { detectTechStack } from './security/techStackDetector.js';
+import { detectErrorTraces } from './security/errorTraceDetector.js';
+import { detectDomXssSinks } from './security/domXssDetector.js';
+
 
 let activeScan = null;
 let isPaused = false;
@@ -231,4 +258,459 @@ function extractLinksFromHtml(html, sourceUrl) {
     const link = match[1];
     enqueue(link, sourceUrl);
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECURITY SCANNER — Passive Security Assessment Module
+// Mevcut Dead Link Scanner koduna dokunulmamıştır.
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+// ── Security Scanner State ────────────────────────────────────────────────────
+let secIsRunning = false;
+let secIsStopped = false;
+let secFindings = [];
+let secStats = {
+  urlsAnalyzed: 0,
+  paramsFound: 0,
+  formsFound: 0,
+  headersChecked: 0,
+  cookiesChecked: 0,
+  mixedContent: 0,
+  findingsCount: 0,
+};
+
+// ── Security Message Handler (mevcut handler'a ek olarak) ────────────────────
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'start_security_scan') {
+    startSecurityScan(request.tabId, request.url);
+    sendResponse({ status: 'started' });
+    return true;
+  }
+  if (request.action === 'stop_security_scan') {
+    secIsStopped = true;
+    secIsRunning = false;
+    emitSecurityEvent('security_scan_finished', {
+      status: 'cancelled',
+      stats: secStats,
+      summary: summarizeFindings(secFindings),
+    });
+    sendResponse({ status: 'stopped' });
+    return true;
+  }
+  if (request.action === 'get_security_state') {
+    sendResponse({
+      isRunning: secIsRunning,
+      findings: sortFindings(secFindings),
+      stats: secStats,
+      summary: summarizeFindings(secFindings),
+    });
+    return true;
+  }
+  // Content script'ten DOM verisi geldi
+  if (request.event === 'security_dom_data') {
+    // Bu mesaj content script'ten gelir, security scan akışında işlenir
+    // (processDomData aracılığıyla zaten handle ediliyor)
+    return false;
+  }
+});
+
+// ── Emit Helpers ──────────────────────────────────────────────────────────────
+function emitSecurityEvent(event, data) {
+  chrome.runtime.sendMessage({ event, data }).catch(() => {});
+}
+
+function emitSecurityFinding(finding) {
+  secFindings.push(finding);
+  secStats.findingsCount = secFindings.length;
+  emitSecurityEvent('security_finding', { finding });
+  emitSecurityEvent('security_stats', { stats: secStats });
+}
+
+function emitSecurityLog(message, type = 'info') {
+  emitSecurityEvent('security_log', {
+    message,
+    type,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+function emitSecurityStats() {
+  emitSecurityEvent('security_stats', { stats: secStats });
+}
+
+// ── Main Security Scan Orchestrator ──────────────────────────────────────────
+async function startSecurityScan(tabId, pageUrlHint) {
+  if (secIsRunning) {
+    emitSecurityLog('Security scan already running.', 'warning');
+    return;
+  }
+
+  // State sıfırla
+  secIsRunning = true;
+  secIsStopped = false;
+  secFindings = [];
+  secStats = {
+    urlsAnalyzed: 0,
+    paramsFound: 0,
+    formsFound: 0,
+    headersChecked: 0,
+    cookiesChecked: 0,
+    mixedContent: 0,
+    findingsCount: 0,
+  };
+
+  emitSecurityEvent('security_scan_started', {});
+  emitSecurityLog('Security scan initializing...', 'info');
+
+  // URL'yi chrome.tabs.get'ten al (tabs permission ile güvenilir)
+  let pageUrl = pageUrlHint || '';
+  if (tabId) {
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (tab && tab.url && tab.url.startsWith('http')) {
+        pageUrl = tab.url;
+      }
+    } catch (tabErr) {
+      emitSecurityLog(`Could not get tab info: ${tabErr.message}`, 'warning');
+    }
+  }
+
+  // Hâlâ URL yoksa hata ver
+  if (!pageUrl || (!pageUrl.startsWith('http://') && !pageUrl.startsWith('https://'))) {
+    emitSecurityLog(`Cannot scan: invalid or missing URL "${pageUrl}". Navigate to an http/https page first.`, 'error');
+    finishSecurityScan('error');
+    return;
+  }
+
+  emitSecurityLog(`Target: ${pageUrl}`, 'info');
+
+  try {
+    let pageOrigin = '';
+    try { pageOrigin = new URL(pageUrl).origin; } catch {}
+    const isHttps = pageUrl.startsWith('https://');
+
+    // ── Step 1: HTTPS Kontrolü ──────────────────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Checking HTTPS...', 'info');
+
+    if (!isHttps) {
+      emitSecurityFinding(createFinding({
+        category: 'https',
+        title: 'HTTPS Not Enabled',
+        severity: 'medium',
+        confidence: 'high',
+        url: pageUrl,
+        evidence: 'The page is served over HTTP. Data transmitted between the browser and server is not encrypted.',
+        recommendation: 'Enable HTTPS using a valid TLS certificate. Consider redirecting all HTTP traffic to HTTPS and enabling HSTS.',
+      }));
+    }
+
+    // ── Step 2: Sayfayı Fetch Et — Header + Cookie + HTML Analizi ──────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog(`Fetching page for header and content analysis: ${pageUrl}`, 'info');
+
+    let responseHeaders = null;
+    let setCookieValues = [];
+    let htmlContent = '';
+
+    try {
+      const response = await fetch(pageUrl, {
+        method: 'GET',
+        credentials: 'omit', // Cookie'leri request'e ekleme
+        redirect: 'follow',
+      });
+
+      responseHeaders = response.headers;
+
+      // Set-Cookie header'larını topla (değerleri değil, sadece yapıyı)
+      // Not: Fetch API güvenlik nedeniyle Set-Cookie'yi expose etmeyebilir
+      try {
+        const setCookie = response.headers.get('set-cookie');
+        if (setCookie) {
+          setCookieValues = setCookie.split(/,(?=\s*\w+=)/); // birden fazla cookie
+        }
+      } catch { /* header erişimi başarısız */ }
+
+      if (response.headers.get('content-type')?.includes('text/html')) {
+        htmlContent = await response.text();
+      }
+
+      secStats.urlsAnalyzed++;
+      emitSecurityStats();
+    } catch (fetchErr) {
+      emitSecurityLog(`Could not fetch page: ${fetchErr.message}. Header analysis skipped.`, 'warning');
+      emitSecurityFinding(createFinding({
+        category: 'configuration',
+        title: 'Page Could Not Be Fetched for Analysis',
+        severity: 'info',
+        confidence: 'high',
+        url: pageUrl,
+        evidence: `Fetch error: ${fetchErr.message}`,
+        recommendation: 'Manually inspect security headers using browser DevTools → Network tab.',
+      }));
+    }
+
+    // ── Step 3: Security Headers Analizi ────────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Analyzing security headers...', 'info');
+
+    const headerFindings = analyzeSecurityHeaders(responseHeaders, pageUrl);
+    secStats.headersChecked = 6;
+    for (const f of headerFindings) emitSecurityFinding(f);
+
+    // ── Step 3b: Information Disclosure (Response Headers) ──────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Checking for server information disclosure...', 'info');
+    const headerDisclosureFindings = detectHeaderDisclosure(responseHeaders, pageUrl);
+    for (const f of headerDisclosureFindings) emitSecurityFinding(f);
+
+    // ── Step 3c: CORS Policy ─────────────────────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Analyzing CORS policy...', 'info');
+    const corsFindings = analyzeCors(responseHeaders, pageUrl);
+    for (const f of corsFindings) emitSecurityFinding(f);
+
+    // ── Step 4: Cookie Analizi ───────────────────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Analyzing cookie security flags...', 'info');
+
+    if (setCookieValues.length > 0) {
+      secStats.cookiesChecked = setCookieValues.length;
+      const cookieFindings = analyzeCookies(setCookieValues, pageUrl, isHttps);
+      for (const f of cookieFindings) emitSecurityFinding(f);
+    } else {
+      emitSecurityLog('No Set-Cookie headers detected (or browser restricted access).', 'info');
+    }
+
+    // ── Step 4b: WAF Fingerprinting ──────────────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Fingerprinting for Web Application Firewalls (WAF)...', 'info');
+    const wafFindings = detectWaf(responseHeaders, setCookieValues, pageUrl);
+    for (const f of wafFindings) emitSecurityFinding(f);
+
+    // ── Step 5: Mixed Content Analizi ───────────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    if (htmlContent && isHttps) {
+      emitSecurityLog('Checking for mixed content...', 'info');
+      const { findings: mcFindings, summary: mcSummary } = detectMixedContent(htmlContent, pageUrl);
+      secStats.mixedContent = mcSummary.total;
+      for (const f of mcFindings) emitSecurityFinding(f);
+    }
+
+    // ── Step 5e: Tech Stack Fingerprinting ──────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Analyzing technology stack...', 'info');
+    const techStackFindings = detectTechStack(htmlContent, responseHeaders, pageUrl);
+    for (const f of techStackFindings) emitSecurityFinding(f);
+
+    // ── Step 5f: Secrets Leakage Detection ──────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    if (htmlContent) {
+      emitSecurityLog('Scanning for leaked secrets and API keys...', 'info');
+      const secretFindings = detectSecrets(htmlContent, pageUrl);
+      for (const f of secretFindings) emitSecurityFinding(f);
+    }
+
+    // ── Step 5g: Error Trace Leakage Detection ──────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    if (htmlContent) {
+      emitSecurityLog('Scanning for sensitive error traces and stack leaks...', 'info');
+      const errorFindings = detectErrorTraces(htmlContent, pageUrl);
+      for (const f of errorFindings) emitSecurityFinding(f);
+    }
+
+    // ── Step 5b: Subresource Integrity (SRI) ────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    if (htmlContent) {
+      emitSecurityLog('Checking Subresource Integrity (SRI)...', 'info');
+      const sriFindings = detectMissingSri(htmlContent, pageUrl, pageOrigin);
+      for (const f of sriFindings) emitSecurityFinding(f);
+
+      // ── Step 5c: Reverse Tabnapping ─────────────────────────────────────
+      emitSecurityLog('Checking for reverse tabnapping vulnerabilities...', 'info');
+      const tabnappingFindings = detectTabnapping(htmlContent, pageUrl, pageOrigin);
+      for (const f of tabnappingFindings) emitSecurityFinding(f);
+
+      // ── Step 5d: Information Disclosure (Meta Tags + DNS Prefetch) ────────
+      emitSecurityLog('Analyzing meta tags and DNS prefetch for information disclosure...', 'info');
+      const metaFindings = detectMetaDisclosure(htmlContent, pageUrl);
+      const dnsFindings = detectDnsPrefetchLeakage(htmlContent, pageUrl);
+      for (const f of [...metaFindings, ...dnsFindings]) emitSecurityFinding(f);
+    }
+
+    // ── Step 6: DOM Analizi — Content Script ─────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Requesting DOM analysis from page...', 'info');
+
+    let domData = null;
+    try {
+      domData = await requestDomData(tabId);
+    } catch (domErr) {
+      emitSecurityLog(`DOM analysis unavailable: ${domErr.message}`, 'warning');
+    }
+
+    if (domData) {
+      const {
+        params = [], forms = [], inlineScripts = [],
+        scriptSrcs = [], pageHtml = '', allLinks = [],
+        isHttps: domIsHttps = isHttps,
+      } = domData;
+
+      secStats.paramsFound = params.length;
+      secStats.formsFound = forms.length;
+      emitSecurityStats();
+
+      emitSecurityLog(`DOM analysis: ${params.length} params, ${forms.length} forms, ${scriptSrcs.length} scripts, ${allLinks.length} links.`, 'info');
+
+      // ── Step 7: Sensitive Resource Detection ──────────────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Scanning for sensitive resources...', 'info');
+      const sensitiveFindings = detectSensitiveResources(allLinks, pageUrl, pageOrigin);
+      for (const f of sensitiveFindings) emitSecurityFinding(f);
+
+      // ── Step 7b: JavaScript Library Vulnerability Detection ───────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Detecting JavaScript library vulnerabilities...', 'info');
+      const jsLibFindings = detectVulnerableLibraries(scriptSrcs, inlineScripts, pageUrl);
+      for (const f of jsLibFindings) emitSecurityFinding(f);
+
+      // ── Step 7e: Advanced DOM-XSS Sink Detection ──────────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Analyzing inline scripts for dangerous sinks (DOM-XSS)...', 'info');
+      const domXssFindings = detectDomXssSinks(inlineScripts, pageUrl);
+      for (const f of domXssFindings) emitSecurityFinding(f);
+
+      // ── Step 7c: Open Redirect Detection ──────────────────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Checking for open redirect parameters...', 'info');
+      const openRedirectParamFindings = detectOpenRedirect(params, pageUrl);
+      const openRedirectFormFindings = detectOpenRedirectInForms(forms, pageUrl);
+      for (const f of [...openRedirectParamFindings, ...openRedirectFormFindings]) emitSecurityFinding(f);
+
+      // ── Step 7d: Enhanced Form Security Analysis ──────────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Analyzing form security (CSRF, autocomplete, mixed forms)...', 'info');
+      const formSecFindings = analyzeFormSecurity(forms, pageUrl, domIsHttps);
+      for (const f of formSecFindings) emitSecurityFinding(f);
+
+      // ── Step 8: Passive SQLi Risk Detection ───────────────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Identifying potential SQL injection input points...', 'info');
+      const sqliParamFindings = detectSqliRiskFromParams(params, pageUrl);
+      const sqliFormFindings = detectSqliRiskFromForms(forms, pageUrl);
+      for (const f of [...sqliParamFindings, ...sqliFormFindings]) emitSecurityFinding(f);
+
+      // ── Step 9: Passive XSS Risk Detection ────────────────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Identifying potential XSS risk points...', 'info');
+      const xssScriptFindings = detectXssRiskFromScripts(inlineScripts, pageUrl);
+      const xssParamFindings = detectXssRiskFromParams(params, pageUrl);
+      for (const f of [...xssScriptFindings, ...xssParamFindings]) emitSecurityFinding(f);
+
+      // ── Step 9b: SRI from DOM HTML (if not from fetch) ────────────────────
+      if (!htmlContent && pageHtml) {
+        const sriDomFindings = detectMissingSri(pageHtml, pageUrl, pageOrigin);
+        for (const f of sriDomFindings) emitSecurityFinding(f);
+        const tabnappingDomFindings = detectTabnapping(pageHtml, pageUrl, pageOrigin);
+        for (const f of tabnappingDomFindings) emitSecurityFinding(f);
+      }
+    }
+
+    // ── Step 10: HTML fallback link analysis ──────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    if (htmlContent && !domData) {
+      emitSecurityLog('Running HTML-based link analysis (DOM unavailable)...', 'info');
+      const links = extractLinksFromHtmlForSecurity(htmlContent, pageUrl);
+      const sensitiveFindings = detectSensitiveResources(links, pageUrl, pageOrigin);
+      for (const f of sensitiveFindings) emitSecurityFinding(f);
+    }
+
+    // ── Step 11: robots.txt Analizi ───────────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Fetching and analyzing robots.txt...', 'info');
+    const robotsFindings = await analyzeRobotsTxt(pageUrl);
+    for (const f of robotsFindings) emitSecurityFinding(f);
+
+    // ── Step 12: security.txt Kontrolü ────────────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Checking for security.txt (RFC 9116)...', 'info');
+    const secTxtFindings = await checkSecurityTxt(pageUrl);
+    for (const f of secTxtFindings) emitSecurityFinding(f);
+
+    // ── Step 13: HTTP→HTTPS Redirect Kontrolü ────────────────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Checking HTTP to HTTPS redirect configuration...', 'info');
+    const redirectFindings = await checkHttpToHttpsRedirect(pageUrl);
+    for (const f of redirectFindings) emitSecurityFinding(f);
+
+    finishSecurityScan('completed');
+
+  } catch (err) {
+    emitSecurityLog(`Security scan error: ${err.message}`, 'error');
+    finishSecurityScan('error');
+  }
+}
+
+function finishSecurityScan(status) {
+  secIsRunning = false;
+  const summary = summarizeFindings(secFindings);
+  emitSecurityLog(
+    status === 'completed'
+      ? `Security scan complete. ${secFindings.length} findings. No exploits performed.`
+      : `Security scan ${status}.`,
+    status === 'completed' ? 'success' : 'warning'
+  );
+  emitSecurityEvent('security_scan_finished', {
+    status,
+    stats: secStats,
+    summary,
+    findings: sortFindings(secFindings),
+  });
+}
+
+/**
+ * Content script'ten DOM verisi ister.
+ * @param {number} tabId
+ * @returns {Promise<Object>}
+ */
+function requestDomData(tabId) {
+  return new Promise((resolve, reject) => {
+    if (!tabId) {
+      reject(new Error('No tab ID provided'));
+      return;
+    }
+    const timeout = setTimeout(() => reject(new Error('DOM data request timed out')), 5000);
+    chrome.tabs.sendMessage(tabId, { action: 'collect_dom_data' }, (response) => {
+      clearTimeout(timeout);
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (response && response.success) {
+        resolve(response.data);
+      } else {
+        reject(new Error(response?.error || 'Content script did not respond'));
+      }
+    });
+  });
+}
+
+/**
+ * HTML içeriğinden güvenlik analizi için link listesi çıkarır.
+ * Dead Link Scanner'ın extractLinksFromHtml'inden bağımsız — enqueue çağırmaz.
+ */
+function extractLinksFromHtmlForSecurity(html, sourceUrl) {
+  const links = new Set();
+  const linkRegex = /(?:href|src|action)=["']([^"']+)["']/gi;
+  let match;
+  while ((match = linkRegex.exec(html)) !== null) {
+    const raw = match[1];
+    if (raw.startsWith('mailto:') || raw.startsWith('javascript:') || raw.startsWith('data:')) continue;
+    try {
+      const resolved = new URL(raw, sourceUrl).href;
+      links.add(resolved);
+    } catch { /* geçersiz URL */ }
+  }
+  return Array.from(links);
 }
