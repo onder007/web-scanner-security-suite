@@ -3,6 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { generateSecurityPdf } from '../utils/pdfGenerator.js';
 
 const SEVERITY_CONFIG = {
   critical: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', label: 'Critical' },
@@ -178,9 +179,20 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
       {(isCompleted || isRunning) && summary.total > 0 && (
         <div style={{ marginTop: '20px' }}>
           
-          <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Security Score & Severities
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+              Security Score & Severities
+            </h3>
+            {isCompleted && (
+              <button 
+                className="btn btn-outline" 
+                style={{ padding: '4px 12px', fontSize: '0.8rem' }}
+                onClick={() => generateSecurityPdf(findings, summary, stats, displayUrl)}
+              >
+                📄 Export PDF
+              </button>
+            )}
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '16px', marginBottom: '24px' }}>
             {/* Score */}

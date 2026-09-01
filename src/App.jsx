@@ -3,13 +3,14 @@ import Dashboard from './components/Dashboard';
 import LiveLogs from './components/LiveLogs';
 import ResultsTable from './components/ResultsTable';
 import SettingsPanel from './components/SettingsPanel';
-import SecurityDashboard from './components/SecurityDashboard';
-import SecurityFindings from './components/SecurityFindings';
+import SecurityDashboard from './components/SecurityDashboard.jsx';
+import SecurityFindings from './components/SecurityFindings.jsx';
+import SecurityHistory from './components/SecurityHistory.jsx';
 import './styles/App.css';
 
 function App() {
   // ── Main Tab State ──────────────────────────────────────────────────────────
-  const [activeMainTab, setActiveMainTab] = useState('deadlinks'); // 'deadlinks' | 'security'
+  const [activeMainTab, setActiveMainTab] = useState('deadlinks'); // 'deadlinks' | 'security' | 'history'
 
   // ── Dead Link Scanner State (unchanged) ────────────────────────────────────
   const [url, setUrl] = useState('');
@@ -208,6 +209,13 @@ function App() {
           >
             🛡 Security
           </button>
+          <button
+            id="tab-history"
+            className={`main-tab ${activeMainTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveMainTab('history')}
+          >
+            🗂️ History
+          </button>
         </div>
 
         {/* Dead Links URL Input — only shown on deadlinks tab */}
@@ -284,6 +292,13 @@ function App() {
             logs={secLogs}
             isRunning={secStatus === 'running'}
           />
+        </div>
+      )}
+
+      {/* ── History Tab Content ────────────────────────────────────────────── */}
+      {activeMainTab === 'history' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+          <SecurityHistory />
         </div>
       )}
     </div>

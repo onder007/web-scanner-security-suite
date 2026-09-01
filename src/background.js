@@ -2,7 +2,7 @@
 import { analyzeSecurityHeaders } from './security/headerDetector.js';
 import { analyzeCookies } from './security/cookieDetector.js';
 import { detectMixedContent } from './security/mixedContentDetector.js';
-import { detectSensitiveResources } from './security/sensitiveResourceDetector.js';
+import { detectSensitiveResources, detectBrokenLinkHijacking } from './security/sensitiveResourceDetector.js';
 import {
   detectSqliRiskFromParams,
   detectSqliRiskFromForms,
@@ -25,11 +25,43 @@ import { detectWaf } from './security/wafDetector.js';
 import { detectTechStack } from './security/techStackDetector.js';
 import { detectErrorTraces } from './security/errorTraceDetector.js';
 import { detectDomXssSinks } from './security/domXssDetector.js';
+import { saveScanToHistory } from './storage/historyDb.js';
 
 
 let activeScan = null;
 let isPaused = false;
 let isStopped = false;
+
+// ── Global Security Settings ────────────────────────────────────────────────
+let securitySettings = {
+  autoScanEnabled: false,
+  enableDomXss: true,
+  enableSecrets: true,
+  enableWaf: true,
+  enableTechStack: true,
+  enableErrorTrace: true
+};
+
+chrome.storage.sync.get(['securitySettings'], (result) => {
+  if (result.securitySettings) {
+    securitySettings = result.securitySettings;
+  }
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes.securitySettings?.newValue) {
+    securitySettings = changes.securitySettings.newValue;
+  }
+});
+
+// ── Auto-Scan Listener ──────────────────────────────────────────────────────
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (securitySettings.autoScanEnabled && changeInfo.status === 'complete' && tab.url && tab.url.startsWith('http')) {
+    // Run a silent background scan for the badge
+    startSecurityScan(tabId, tab.url, true);
+  }
+});
+
 
 let stats = {
   totalUrls: 0,
@@ -316,15 +348,62 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // ── Emit Helpers ──────────────────────────────────────────────────────────────
-function emitSecurityEvent(event, data) {
-  chrome.runtime.sendMessage({ event, data }).catch(() => {});
+function finishSecurityScan(status) {
+  secIsRunning = false;
+  secIsStopped = false;
+  
+  const currentSummary = summarizeFindings(secFindings);
+
+  if (!secIsSilent && status === 'completed') {
+    // Only save manual completed scans to history
+    saveScanToHistory(pageUrlGlobal, secStats, currentSummary, secFindings);
+  }
+
+  if (!secIsSilent) {
+    emitSecurityEvent('security_scan_completed', {
+      status,
+      stats: secStats,
+      summary: currentSummary,
+    });
+  }
+  
+  // Update badge if silent or manual
+  updateBadge();
 }
 
-function emitSecurityFinding(finding) {
+let pageUrlGlobal = '';
+
+function updateBadge() {
+  const summary = summarizeFindings(secFindings);
+  let text = '';
+  let color = '#94a3b8'; // default gray
+
+  if (summary.critical > 0) {
+    text = summary.critical.toString();
+    color = '#ef4444'; // red
+  } else if (summary.high > 0) {
+    text = summary.high.toString();
+    color = '#f97316'; // orange
+  } else if (summary.medium > 0) {
+    text = summary.medium.toString();
+    color = '#f59e0b'; // yellow
+  } else if (summary.low > 0 || summary.info > 0) {
+    text = '✓';
+    color = '#10b981'; // green
+  }
+
+  chrome.action.setBadgeText({ text });
+  chrome.action.setBadgeBackgroundColor({ color });
+}
+
+function emitSecurityFinding(finding, isSilent = false) {
   secFindings.push(finding);
+  secFindings = sortFindings(secFindings);
   secStats.findingsCount = secFindings.length;
-  emitSecurityEvent('security_finding', { finding });
-  emitSecurityEvent('security_stats', { stats: secStats });
+  if (!secIsSilent && !isSilent) {
+    emitSecurityEvent('security_finding_added', finding);
+    emitSecurityStats();
+  }
 }
 
 function emitSecurityLog(message, type = 'info') {
@@ -340,13 +419,15 @@ function emitSecurityStats() {
 }
 
 // ── Main Security Scan Orchestrator ──────────────────────────────────────────
-async function startSecurityScan(tabId, pageUrlHint) {
-  if (secIsRunning) {
-    emitSecurityLog('Security scan already running.', 'warning');
+async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
+  if (secIsRunning && !isSilent) {
+    emitSecurityLog('A security scan is already running.', 'warning');
     return;
   }
 
-  // State sıfırla
+  // If silent scan but already running a manual scan on the same tab, skip
+  if (isSilent && secIsRunning) return;
+
   secIsRunning = true;
   secIsStopped = false;
   secFindings = [];
@@ -360,8 +441,10 @@ async function startSecurityScan(tabId, pageUrlHint) {
     findingsCount: 0,
   };
 
-  emitSecurityEvent('security_scan_started', {});
-  emitSecurityLog('Security scan initializing...', 'info');
+  if (!isSilent) {
+    emitSecurityEvent('security_scan_started', {});
+    emitSecurityLog('Security scan initializing...', 'info');
+  }
 
   // URL'yi chrome.tabs.get'ten al (tabs permission ile güvenilir)
   let pageUrl = pageUrlHint || '';
@@ -375,6 +458,8 @@ async function startSecurityScan(tabId, pageUrlHint) {
       emitSecurityLog(`Could not get tab info: ${tabErr.message}`, 'warning');
     }
   }
+  
+  pageUrlGlobal = pageUrl;
 
   // Hâlâ URL yoksa hata ver
   if (!pageUrl || (!pageUrl.startsWith('http://') && !pageUrl.startsWith('https://'))) {
@@ -485,9 +570,11 @@ async function startSecurityScan(tabId, pageUrlHint) {
 
     // ── Step 4b: WAF Fingerprinting ──────────────────────────────────────────
     if (secIsStopped) return finishSecurityScan('cancelled');
-    emitSecurityLog('Fingerprinting for Web Application Firewalls (WAF)...', 'info');
-    const wafFindings = detectWaf(responseHeaders, setCookieValues, pageUrl);
-    for (const f of wafFindings) emitSecurityFinding(f);
+    if (securitySettings.enableWaf) {
+      emitSecurityLog('Fingerprinting for Web Application Firewalls (WAF)...', 'info');
+      const wafFindings = detectWaf(responseHeaders, setCookieValues, pageUrl);
+      for (const f of wafFindings) emitSecurityFinding(f);
+    }
 
     // ── Step 5: Mixed Content Analizi ───────────────────────────────────────
     if (secIsStopped) return finishSecurityScan('cancelled');
@@ -500,13 +587,15 @@ async function startSecurityScan(tabId, pageUrlHint) {
 
     // ── Step 5e: Tech Stack Fingerprinting ──────────────────────────────────
     if (secIsStopped) return finishSecurityScan('cancelled');
-    emitSecurityLog('Analyzing technology stack...', 'info');
-    const techStackFindings = detectTechStack(htmlContent, responseHeaders, pageUrl);
-    for (const f of techStackFindings) emitSecurityFinding(f);
+    if (securitySettings.enableTechStack) {
+      emitSecurityLog('Analyzing technology stack...', 'info');
+      const techStackFindings = detectTechStack(htmlContent, responseHeaders, pageUrl);
+      for (const f of techStackFindings) emitSecurityFinding(f);
+    }
 
     // ── Step 5f: Secrets Leakage Detection ──────────────────────────────────
     if (secIsStopped) return finishSecurityScan('cancelled');
-    if (htmlContent) {
+    if (htmlContent && securitySettings.enableSecrets) {
       emitSecurityLog('Scanning for leaked secrets and API keys...', 'info');
       const secretFindings = detectSecrets(htmlContent, pageUrl);
       for (const f of secretFindings) emitSecurityFinding(f);
@@ -514,7 +603,7 @@ async function startSecurityScan(tabId, pageUrlHint) {
 
     // ── Step 5g: Error Trace Leakage Detection ──────────────────────────────
     if (secIsStopped) return finishSecurityScan('cancelled');
-    if (htmlContent) {
+    if (htmlContent && securitySettings.enableErrorTrace) {
       emitSecurityLog('Scanning for sensitive error traces and stack leaks...', 'info');
       const errorFindings = detectErrorTraces(htmlContent, pageUrl);
       for (const f of errorFindings) emitSecurityFinding(f);
@@ -569,6 +658,12 @@ async function startSecurityScan(tabId, pageUrlHint) {
       const sensitiveFindings = detectSensitiveResources(allLinks, pageUrl, pageOrigin);
       for (const f of sensitiveFindings) emitSecurityFinding(f);
 
+      // ── Step 7a: Subdomain Takeover / Broken Link Hijacking ────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Scanning external scripts for Subdomain Takeover risks...', 'info');
+      const takeoverFindings = await detectBrokenLinkHijacking(scriptSrcs, pageUrl);
+      for (const f of takeoverFindings) emitSecurityFinding(f);
+
       // ── Step 7b: JavaScript Library Vulnerability Detection ───────────────
       if (secIsStopped) return finishSecurityScan('cancelled');
       emitSecurityLog('Detecting JavaScript library vulnerabilities...', 'info');
@@ -577,9 +672,11 @@ async function startSecurityScan(tabId, pageUrlHint) {
 
       // ── Step 7e: Advanced DOM-XSS Sink Detection ──────────────────────────
       if (secIsStopped) return finishSecurityScan('cancelled');
-      emitSecurityLog('Analyzing inline scripts for dangerous sinks (DOM-XSS)...', 'info');
-      const domXssFindings = detectDomXssSinks(inlineScripts, pageUrl);
-      for (const f of domXssFindings) emitSecurityFinding(f);
+      if (securitySettings.enableDomXss) {
+        emitSecurityLog('Analyzing inline scripts for dangerous sinks (DOM-XSS)...', 'info');
+        const domXssFindings = detectDomXssSinks(inlineScripts, pageUrl);
+        for (const f of domXssFindings) emitSecurityFinding(f);
+      }
 
       // ── Step 7c: Open Redirect Detection ──────────────────────────────────
       if (secIsStopped) return finishSecurityScan('cancelled');
@@ -650,23 +747,6 @@ async function startSecurityScan(tabId, pageUrlHint) {
     emitSecurityLog(`Security scan error: ${err.message}`, 'error');
     finishSecurityScan('error');
   }
-}
-
-function finishSecurityScan(status) {
-  secIsRunning = false;
-  const summary = summarizeFindings(secFindings);
-  emitSecurityLog(
-    status === 'completed'
-      ? `Security scan complete. ${secFindings.length} findings. No exploits performed.`
-      : `Security scan ${status}.`,
-    status === 'completed' ? 'success' : 'warning'
-  );
-  emitSecurityEvent('security_scan_finished', {
-    status,
-    stats: secStats,
-    summary,
-    findings: sortFindings(secFindings),
-  });
 }
 
 /**

@@ -130,3 +130,53 @@ export function detectSensitiveResources(links, pageUrl, origin) {
 
   return findings;
 }
+
+/**
+ * Dış kaynaklı script'lerde (third-party scripts) kırık link (404/NXDOMAIN) analizi yapar.
+ * Bu durum Subdomain Takeover (Kırık Link Ele Geçirme) zafiyetine işaret edebilir.
+ */
+export async function detectBrokenLinkHijacking(scriptSrcs, pageUrl) {
+  const findings = [];
+  if (!scriptSrcs || scriptSrcs.length === 0) return findings;
+
+  const pageOrigin = new URL(pageUrl).origin;
+
+  for (const src of scriptSrcs) {
+    if (!src.startsWith('http')) continue;
+    
+    try {
+      const srcOrigin = new URL(src).origin;
+      // Sadece external script'lere bak (Subdomain takeover riski)
+      if (srcOrigin === pageOrigin) continue;
+
+      // Hızlıca kaynak kontrolü yap
+      // Background script'te olduğumuz için CORS sorun olmaz (host_permissions *://*/*).
+      const response = await fetch(src, { method: 'HEAD' });
+      
+      if (!response.ok && response.status === 404) {
+        findings.push(createFinding({
+          category: 'Sensitive Resources',
+          title: 'Potential Subdomain Takeover / Broken Link Hijacking',
+          severity: 'critical',
+          confidence: 'high',
+          url: pageUrl,
+          evidence: `The page loads an external script that returns a 404 Not Found: ${src}`,
+          recommendation: `Remove the dead script reference immediately. An attacker could register the expired domain/subdomain and serve malicious JavaScript (XSS) to all your visitors.`
+        }));
+      }
+    } catch (e) {
+      // Eğer fetch tamamen başarısız olursa (DNS bulunamadıysa) bu yüksek ihtimalle bir subdomain takeover'dır.
+      findings.push(createFinding({
+        category: 'Sensitive Resources',
+        title: 'Potential Subdomain Takeover / Broken Link Hijacking',
+        severity: 'critical',
+        confidence: 'high',
+        url: pageUrl,
+        evidence: `The page loads an external script from an unreachable domain/URL: ${src}\nError: ${e.message}`,
+        recommendation: `Remove the dead script reference immediately. An attacker could register the expired domain/subdomain and serve malicious JavaScript (XSS) to all your visitors.`
+      }));
+    }
+  }
+
+  return findings;
+}
