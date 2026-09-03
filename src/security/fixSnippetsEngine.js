@@ -250,5 +250,48 @@ export function getFixSnippets(finding) {
     ];
   }
 
+  // 13. Source Map (.map) Exposure
+  if (title.includes('source map') || title.includes('.map')) {
+    return [
+      {
+        server: 'Nginx (Block .map files)',
+        path: '/etc/nginx/sites-available/default',
+        code: `location ~* \\.map$ {\n  deny all;\n  return 404;\n}`
+      },
+      {
+        server: 'Next.js (Disable Source Maps)',
+        path: 'next.config.js',
+        code: `module.exports = {\n  productionBrowserSourceMaps: false,\n};`
+      },
+      {
+        server: 'Vite',
+        path: 'vite.config.js',
+        code: `export default defineConfig({\n  build: {\n    sourcemap: false\n  }\n});`
+      }
+    ];
+  }
+
+  // 14. PostMessage Origin Verification
+  if (title.includes('postmessage')) {
+    return [
+      {
+        server: 'JavaScript (Origin Validation)',
+        path: 'Client-side script',
+        code: `window.addEventListener('message', (event) => {\n  // 1. Her zaman gönderici origin'i denetleyin\n  if (event.origin !== 'https://trusted-domain.com') return;\n\n  // 2. Veriyi güvenle işleyin\n  console.log('Valid message received:', event.data);\n});`
+      }
+    ];
+  }
+
+  // 15. JWT / Client Storage Leak
+  if (title.includes('jwt token') || title.includes('stored in localstorage')) {
+    return [
+      {
+        server: 'Express.js (HttpOnly Cookie)',
+        path: 'Backend Auth Controller',
+        code: `// JWT'yi localStorage yerine HttpOnly çerezde saklayın:\nres.cookie('token', jwtToken, {\n  httpOnly: true,\n  secure: process.env.NODE_ENV === 'production',\n  sameSite: 'strict'\n});`
+      }
+    ];
+  }
+
   return null;
 }

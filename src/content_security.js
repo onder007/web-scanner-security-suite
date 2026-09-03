@@ -181,6 +181,34 @@
   }
 
   /**
+   * localStorage ve sessionStorage anahtar/değer özetlerini toplar.
+   */
+  function collectClientStorage() {
+    const storageData = { localStorage: {}, sessionStorage: {} };
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i);
+        if (key) {
+          const val = window.localStorage.getItem(key) || '';
+          storageData.localStorage[key] = val.length > 500 ? val.substring(0, 500) : val;
+        }
+      }
+    } catch {}
+
+    try {
+      for (let i = 0; i < window.sessionStorage.length; i++) {
+        const key = window.sessionStorage.key(i);
+        if (key) {
+          const val = window.sessionStorage.getItem(key) || '';
+          storageData.sessionStorage[key] = val.length > 500 ? val.substring(0, 500) : val;
+        }
+      }
+    } catch {}
+
+    return storageData;
+  }
+
+  /**
    * Tüm DOM analizini çalıştırır ve background'a gönderir.
    */
   function runDomAnalysis() {
@@ -193,6 +221,7 @@
         forms: collectForms(),
         inlineScripts: collectInlineScripts(),
         allLinks: collectAllLinks(),
+        clientStorage: collectClientStorage(),
       };
 
       chrome.runtime.sendMessage({
@@ -220,6 +249,7 @@
           scriptSrcs: collectScriptSrcs(),
           pageHtml: collectPageHtml(),
           allLinks: collectAllLinks(),
+          clientStorage: collectClientStorage(),
         };
         sendResponse({ success: true, data });
       } catch (e) {

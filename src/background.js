@@ -26,6 +26,12 @@ import { detectTechStack } from './security/techStackDetector.js';
 import { detectErrorTraces } from './security/errorTraceDetector.js';
 import { detectDomXssSinks } from './security/domXssDetector.js';
 import { analyzeDnsEmailSecurity } from './security/dnsEmailDetector.js';
+import { mineEndpointsFromScripts } from './security/jsEndpointMiner.js';
+import { detectExposedSourceMaps } from './security/sourceMapDetector.js';
+import { analyzeClientStorage } from './security/clientStorageDetector.js';
+import { analyzePostMessageSecurity } from './security/postMessageDetector.js';
+import { evaluateCspDeep } from './security/cspEvaluator.js';
+import { analyzeSupplyChainTrackers } from './security/supplyChainDetector.js';
 import { saveScanToHistory } from './storage/historyDb.js';
 
 
@@ -571,6 +577,13 @@ async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
     secStats.headersChecked = 6;
     for (const f of headerFindings) emitSecurityFinding(f);
 
+    // Deep CSP Evaluation (Google Evaluator Standard)
+    const cspVal = responseHeaders?.get('content-security-policy');
+    if (cspVal) {
+      const deepCspFindings = evaluateCspDeep(cspVal, pageUrl);
+      for (const f of deepCspFindings) emitSecurityFinding(f);
+    }
+
     // ── Step 3b: Information Disclosure (Response Headers) ──────────────────
     if (secIsStopped) return finishSecurityScan('cancelled');
     emitSecurityLog('Checking for server information disclosure...', 'info');
@@ -670,6 +683,7 @@ async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
       const {
         params = [], forms = [], inlineScripts = [],
         scriptSrcs = [], pageHtml = '', allLinks = [],
+        clientStorage = {},
         isHttps: domIsHttps = isHttps,
       } = domData;
 
@@ -731,6 +745,36 @@ async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
       const xssScriptFindings = detectXssRiskFromScripts(inlineScripts, pageUrl);
       const xssParamFindings = detectXssRiskFromParams(params, pageUrl);
       for (const f of [...xssScriptFindings, ...xssParamFindings]) emitSecurityFinding(f);
+
+      // ── Step 9c: Deep JS Endpoint Mining (Hidden APIs) ───────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Mining JavaScript bundles for hidden API endpoints & routes...', 'info');
+      const endpointFindings = mineEndpointsFromScripts([...inlineScripts, htmlContent, pageHtml], pageUrl);
+      for (const f of endpointFindings) emitSecurityFinding(f);
+
+      // ── Step 9d: Exposed Source Maps (.map) Detection ────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Checking for exposed production source maps (.map)...', 'info');
+      const sourceMapFindings = await detectExposedSourceMaps(scriptSrcs, pageUrl);
+      for (const f of sourceMapFindings) emitSecurityFinding(f);
+
+      // ── Step 9e: Client Storage & Token Leak Audit ───────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Auditing Web Storage (localStorage/sessionStorage) for tokens...', 'info');
+      const storageFindings = analyzeClientStorage(clientStorage, pageUrl);
+      for (const f of storageFindings) emitSecurityFinding(f);
+
+      // ── Step 9f: PostMessage Origin Security Audit ───────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Analyzing postMessage handlers for origin validation...', 'info');
+      const postMessageFindings = analyzePostMessageSecurity([...inlineScripts, htmlContent], pageUrl);
+      for (const f of postMessageFindings) emitSecurityFinding(f);
+
+      // ── Step 9g: Supply Chain & Third-Party Trackers ─────────────────────
+      if (secIsStopped) return finishSecurityScan('cancelled');
+      emitSecurityLog('Mapping third-party script supply chain & trackers...', 'info');
+      const supplyChainFindings = analyzeSupplyChainTrackers(scriptSrcs, pageUrl);
+      for (const f of supplyChainFindings) emitSecurityFinding(f);
 
       // ── Step 9b: SRI from DOM HTML (if not from fetch) ────────────────────
       if (!htmlContent && pageHtml) {
