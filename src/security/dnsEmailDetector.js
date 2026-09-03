@@ -39,6 +39,9 @@ export async function analyzeDnsEmailSecurity(pageUrl) {
   let domain = '';
   try {
     domain = new URL(pageUrl).hostname;
+    // E-postalar kök domain (örn: baristok.com) üzerinden çalıştığı için www. önekini temizle
+    domain = domain.replace(/^www\./i, '');
+
     // Eğer localhost veya IP adresi ise atla
     if (domain === 'localhost' || /^(\d{1,3}\.){3}\d{1,3}$/.test(domain)) {
       return findings;

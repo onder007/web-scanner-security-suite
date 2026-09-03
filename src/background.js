@@ -343,7 +343,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       findings: sortFindings(secFindings),
       stats: secStats,
       summary: summarizeFindings(secFindings),
+      networkLogs: networkLogs.slice(0, 150),
     });
+    return true;
+  }
+  if (request.action === 'clear_network_logs') {
+    networkLogs.length = 0;
+    sendResponse({ success: true });
     return true;
   }
   // Content script'ten DOM verisi geldi
@@ -353,6 +359,62 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false;
   }
 });
+
+// ── Real-time Network Traffic Inspector (chrome.webRequest) ─────────────────
+const networkLogs = [];
+const MAX_NETWORK_LOGS = 200;
+
+if (chrome?.webRequest) {
+  chrome.webRequest.onCompleted.addListener(
+    (details) => {
+      if (!details.url.startsWith('http://') && !details.url.startsWith('https://')) return;
+
+      const logItem = {
+        id: `${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+        url: details.url,
+        method: details.method,
+        statusCode: details.statusCode,
+        type: details.type,
+        timeStamp: details.timeStamp,
+        responseHeaders: details.responseHeaders || [],
+        fromCache: details.fromCache || false,
+        ip: details.ip || '',
+      };
+
+      networkLogs.unshift(logItem);
+      if (networkLogs.length > MAX_NETWORK_LOGS) networkLogs.pop();
+
+      emitSecurityEvent('network_request', logItem);
+    },
+    { urls: ['<all_urls>'] },
+    ['responseHeaders']
+  );
+
+  chrome.webRequest.onErrorOccurred.addListener(
+    (details) => {
+      if (!details.url.startsWith('http://') && !details.url.startsWith('https://')) return;
+
+      const logItem = {
+        id: `${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+        url: details.url,
+        method: details.method,
+        statusCode: 'ERR',
+        error: details.error,
+        type: details.type,
+        timeStamp: details.timeStamp,
+        responseHeaders: [],
+        fromCache: false,
+        ip: '',
+      };
+
+      networkLogs.unshift(logItem);
+      if (networkLogs.length > MAX_NETWORK_LOGS) networkLogs.pop();
+
+      emitSecurityEvent('network_request', logItem);
+    },
+    { urls: ['<all_urls>'] }
+  );
+}
 
 // ── Emit Helpers ──────────────────────────────────────────────────────────────
 function emitSecurityEvent(event, data) {

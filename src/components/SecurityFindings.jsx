@@ -228,12 +228,14 @@ const FindingCard = ({ finding }) => {
 };
 
 // ── Main SecurityFindings Component ──────────────────────────────────────────
-const SecurityFindings = ({ findings, logs, isRunning }) => {
+const SecurityFindings = ({ findings = [], logs = [], networkLogs = [], onClearNetwork, isRunning }) => {
   const [severityFilter, setSeverityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priorityTab, setPriorityTab] = useState('all'); // 'all' | 'urgent' | 'medium' | 'low_info'
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('findings'); // 'findings' | 'logs'
+  const [netSearch, setNetSearch] = useState('');
+  const [netTypeFilter, setNetTypeFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState('findings'); // 'findings' | 'network' | 'logs'
 
   // Scan başlayınca Logs'a, bitince Findings'e geç
   React.useEffect(() => {
@@ -249,16 +251,13 @@ const SecurityFindings = ({ findings, logs, isRunning }) => {
 
   const filteredFindings = useMemo(() => {
     return findings.filter(f => {
-      // Priority filter
       if (priorityTab === 'urgent' && !(f.severity === 'critical' || f.severity === 'high')) return false;
       if (priorityTab === 'medium' && f.severity !== 'medium') return false;
       if (priorityTab === 'low_info' && !(f.severity === 'low' || f.severity === 'info')) return false;
 
-      // Select filters
       if (severityFilter !== 'all' && f.severity !== severityFilter) return false;
       if (categoryFilter !== 'all' && f.category !== categoryFilter) return false;
 
-      // Text search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchTitle = (f.title || '').toLowerCase().includes(q);
@@ -272,6 +271,24 @@ const SecurityFindings = ({ findings, logs, isRunning }) => {
       return true;
     });
   }, [findings, priorityTab, severityFilter, categoryFilter, searchQuery]);
+
+  // Network logs filtering
+  const filteredNetworkLogs = useMemo(() => {
+    return networkLogs.filter(req => {
+      if (netTypeFilter === 'xhr' && req.type !== 'xmlhttprequest' && req.type !== 'fetch') return false;
+      if (netTypeFilter === 'script' && req.type !== 'script') return false;
+      if (netTypeFilter === 'stylesheet' && req.type !== 'stylesheet') return false;
+      if (netTypeFilter === 'image' && req.type !== 'image') return false;
+
+      if (netSearch.trim()) {
+        const q = netSearch.toLowerCase();
+        if (!req.url.toLowerCase().includes(q) && !(req.method || '').toLowerCase().includes(q)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [networkLogs, netTypeFilter, netSearch]);
 
   const exportJSON = () => {
     if (findings.length === 0) return;
@@ -324,6 +341,12 @@ const SecurityFindings = ({ findings, logs, isRunning }) => {
           onClick={() => setActiveTab('findings')}
         >
           Findings ({findings.length})
+        </button>
+        <button
+          className={`sec-subtab ${activeTab === 'network' ? 'active' : ''}`}
+          onClick={() => setActiveTab('network')}
+        >
+          🌐 Network ({networkLogs.length})
         </button>
         <button
           className={`sec-subtab ${activeTab === 'logs' ? 'active' : ''}`}
@@ -445,6 +468,64 @@ const SecurityFindings = ({ findings, logs, isRunning }) => {
         </>
       )}
 
+      {/* 🌐 Network Traffic Inspector Tab */}
+      {activeTab === 'network' && (
+        <div style={{ marginTop: '12px' }}>
+          {/* Controls */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              className="input-field"
+              placeholder="🔍 Filter network requests by URL, path or method..."
+              value={netSearch}
+              onChange={e => setNetSearch(e.target.value)}
+              style={{ flex: 1, minWidth: '180px', padding: '6px 10px', fontSize: '0.8rem' }}
+            />
+            <select
+              className="input-field"
+              style={{ width: 'auto', padding: '6px 10px', fontSize: '0.8rem' }}
+              value={netTypeFilter}
+              onChange={e => setNetTypeFilter(e.target.value)}
+            >
+              <option value="all">All Types</option>
+              <option value="xhr">Fetch / XHR</option>
+              <option value="script">Scripts (JS)</option>
+              <option value="stylesheet">Stylesheets (CSS)</option>
+              <option value="image">Images</option>
+            </select>
+            {onClearNetwork && (
+              <button
+                className="btn btn-outline"
+                style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                onClick={onClearNetwork}
+                title="Clear network logs"
+              >
+                🗑️ Clear
+              </button>
+            )}
+          </div>
+
+          {/* Network Table Container */}
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.7)',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            maxHeight: '420px',
+            overflowY: 'auto'
+          }}>
+            {filteredNetworkLogs.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                {networkLogs.length === 0
+                  ? 'No network traffic captured yet. Browse the page to observe live requests.'
+                  : 'No requests match the filter.'}
+              </div>
+            ) : (
+              filteredNetworkLogs.map(req => <NetworkRequestRow key={req.id} req={req} />)
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Logs Tab */}
       {activeTab === 'logs' && (
         <div ref={logsRef} className="logs-container" style={{ marginTop: '12px', maxHeight: '400px' }}>
@@ -457,6 +538,120 @@ const SecurityFindings = ({ findings, logs, isRunning }) => {
                 <span className="log-message">{l.message}</span>
               </div>
             ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Network Request Row Component ─────────────────────────────────────────────
+const NetworkRequestRow = ({ req }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  let pathname = req.url;
+  let host = '';
+  try {
+    const u = new URL(req.url);
+    host = u.host;
+    pathname = u.pathname + u.search;
+  } catch {}
+
+  const isSuccess = req.statusCode >= 200 && req.statusCode < 300;
+  const isRedirect = req.statusCode >= 300 && req.statusCode < 400;
+  const isError = req.statusCode >= 400 || req.statusCode === 'ERR';
+
+  const statusColor = isSuccess ? '#10b981' : isRedirect ? '#3b82f6' : isError ? '#ef4444' : '#94a3b8';
+  const methodColor = req.method === 'POST' ? '#f59e0b' : req.method === 'GET' ? '#3b82f6' : '#8b5cf6';
+
+  return (
+    <div style={{
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      padding: '7px 10px',
+      fontSize: '0.78rem',
+      background: expanded ? 'rgba(255,255,255,0.04)' : 'transparent',
+      transition: 'background 0.2s'
+    }}>
+      <div 
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        {/* Status Code */}
+        <span style={{
+          minWidth: '40px',
+          fontWeight: 700,
+          color: statusColor,
+          background: `${statusColor}18`,
+          padding: '2px 4px',
+          borderRadius: '4px',
+          textAlign: 'center',
+          fontSize: '0.72rem'
+        }}>
+          {req.statusCode}
+        </span>
+
+        {/* Method */}
+        <span style={{
+          fontWeight: 700,
+          color: methodColor,
+          fontSize: '0.72rem',
+          minWidth: '36px'
+        }}>
+          {req.method}
+        </span>
+
+        {/* Type */}
+        <span style={{
+          color: '#94a3b8',
+          fontSize: '0.66rem',
+          background: 'rgba(255,255,255,0.05)',
+          padding: '1px 5px',
+          borderRadius: '3px',
+          textTransform: 'uppercase'
+        }}>
+          {req.type || 'other'}
+        </span>
+
+        {/* Path & Host */}
+        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ color: '#64748b', marginRight: '4px' }}>{host}</span>
+          <span style={{ color: '#f1f5f9' }} title={req.url}>{pathname}</span>
+        </div>
+
+        {/* Time */}
+        <span style={{ color: '#64748b', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+          {new Date(req.timeStamp).toLocaleTimeString()}
+        </span>
+      </div>
+
+      {expanded && (
+        <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.4)', borderRadius: '6px', fontSize: '0.72rem' }}>
+          <div style={{ marginBottom: '6px', wordBreak: 'break-all' }}>
+            <strong style={{ color: '#94a3b8' }}>Full URL: </strong>
+            <a href={req.url} target="_blank" rel="noreferrer" style={{ color: '#38bdf8' }}>{req.url}</a>
+          </div>
+          {req.ip && (
+            <div style={{ marginBottom: '6px', color: '#94a3b8' }}>
+              <strong>Server IP: </strong>{req.ip} {req.fromCache ? '(from cache)' : ''}
+            </div>
+          )}
+          {req.error && (
+            <div style={{ marginBottom: '6px', color: '#ef4444' }}>
+              <strong>Error: </strong>{req.error}
+            </div>
+          )}
+          {req.responseHeaders && req.responseHeaders.length > 0 && (
+            <div>
+              <strong style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Response Headers:</strong>
+              <div style={{ maxHeight: '160px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '4px' }}>
+                {req.responseHeaders.map((h, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '2px', wordBreak: 'break-all' }}>
+                    <span style={{ color: '#38bdf8', minWidth: '130px', fontWeight: 600 }}>{h.name}:</span>
+                    <span style={{ color: '#cbd5e1' }}>{h.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}

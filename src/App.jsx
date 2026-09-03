@@ -48,6 +48,7 @@ function App() {
   const [secFindings, setSecFindings] = useState([]);
   const [secSummary, setSecSummary] = useState({ critical: 0, high: 0, medium: 0, low: 0, info: 0, total: 0 });
   const [secLogs, setSecLogs] = useState([]);
+  const [networkLogs, setNetworkLogs] = useState([]);
   const [currentTabUrl, setCurrentTabUrl] = useState('');
 
   // Aktif tab URL'sini oku (popup açılınca)
@@ -79,6 +80,7 @@ function App() {
         if (response.findings?.length) setSecFindings(response.findings);
         if (response.stats) setSecStats(response.stats);
         if (response.summary) setSecSummary(response.summary);
+        if (response.networkLogs) setNetworkLogs(response.networkLogs);
       }
     });
 
@@ -126,6 +128,8 @@ function App() {
         if (message.data.summary) setSecSummary(message.data.summary);
         if (message.data.stats) setSecStats(message.data.stats);
         if (message.data.findings) setSecFindings(message.data.findings);
+      } else if (message.event === 'network_request') {
+        setNetworkLogs((prev) => [message.data, ...prev].slice(0, 200));
       }
     };
 
@@ -306,6 +310,11 @@ function App() {
           <SecurityFindings
             findings={secFindings}
             logs={secLogs}
+            networkLogs={networkLogs}
+            onClearNetwork={() => {
+              if (chrome?.runtime) chrome.runtime.sendMessage({ action: 'clear_network_logs' });
+              setNetworkLogs([]);
+            }}
             isRunning={secStatus === 'running'}
           />
         </div>

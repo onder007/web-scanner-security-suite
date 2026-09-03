@@ -20,7 +20,8 @@
     "activeTab",
     "scripting",
     "tabs",
-    "sidePanel"
+    "sidePanel",
+    "webRequest"
   ],
   "side_panel": {
     "default_path": "index.html"
