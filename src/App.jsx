@@ -75,7 +75,7 @@ function App() {
     // Restore security scanner state on popup open
     chrome.runtime.sendMessage({ action: 'get_security_state' }, (response) => {
       if (response) {
-        if (response.isRunning) setSecStatus('running');
+        setSecStatus(response.isRunning ? 'running' : response.findings?.length ? 'completed' : 'idle');
         if (response.findings?.length) setSecFindings(response.findings);
         if (response.stats) setSecStats(response.stats);
         if (response.summary) setSecSummary(response.summary);
@@ -111,11 +111,17 @@ function App() {
         setSecLogs([]);
       } else if (message.event === 'security_log') {
         setSecLogs((prev) => [...prev, message.data].slice(-300));
-      } else if (message.event === 'security_finding') {
-        setSecFindings((prev) => [...prev, message.data.finding]);
+      } else if (message.event === 'security_finding' || message.event === 'security_finding_added') {
+        const item = message.data?.finding || message.data;
+        if (item && item.id) {
+          setSecFindings((prev) => {
+            if (prev.some(f => f.id === item.id)) return prev;
+            return [...prev, item];
+          });
+        }
       } else if (message.event === 'security_stats') {
-        setSecStats(message.data.stats);
-      } else if (message.event === 'security_scan_finished') {
+        setSecStats(message.data.stats || message.data);
+      } else if (message.event === 'security_scan_finished' || message.event === 'security_scan_completed') {
         setSecStatus(message.data.status || 'completed');
         if (message.data.summary) setSecSummary(message.data.summary);
         if (message.data.stats) setSecStats(message.data.stats);

@@ -36,6 +36,7 @@ export async function analyzeRobotsTxt(pageUrl) {
       method: 'GET',
       credentials: 'omit',
       redirect: 'follow',
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
@@ -141,6 +142,7 @@ export async function checkSecurityTxt(pageUrl) {
       method: 'HEAD',
       credentials: 'omit',
       redirect: 'follow',
+      signal: AbortSignal.timeout(5000),
     });
 
     if (response.ok) {
@@ -189,6 +191,7 @@ export async function checkHttpToHttpsRedirect(pageUrl) {
       method: 'HEAD',
       credentials: 'omit',
       redirect: 'manual',
+      signal: AbortSignal.timeout(5000)
     });
 
     if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {

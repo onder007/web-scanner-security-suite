@@ -348,23 +348,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // ── Emit Helpers ──────────────────────────────────────────────────────────────
+function emitSecurityEvent(event, data) {
+  chrome.runtime.sendMessage({ event, data }).catch(() => {});
+}
+
 function finishSecurityScan(status) {
   secIsRunning = false;
   secIsStopped = false;
   
   const currentSummary = summarizeFindings(secFindings);
+  const sortedFindings = sortFindings(secFindings);
 
   if (!secIsSilent && status === 'completed') {
     // Only save manual completed scans to history
     saveScanToHistory(pageUrlGlobal, secStats, currentSummary, secFindings);
   }
 
+  emitSecurityLog(
+    status === 'completed'
+      ? `Security scan complete. ${secFindings.length} findings. No exploits performed.`
+      : `Security scan ${status}.`,
+    status === 'completed' ? 'success' : 'warning'
+  );
+
   if (!secIsSilent) {
-    emitSecurityEvent('security_scan_completed', {
+    const payload = {
       status,
       stats: secStats,
       summary: currentSummary,
-    });
+      findings: sortedFindings,
+    };
+    emitSecurityEvent('security_scan_completed', payload);
+    emitSecurityEvent('security_scan_finished', payload);
   }
   
   // Update badge if silent or manual
@@ -401,12 +416,14 @@ function emitSecurityFinding(finding, isSilent = false) {
   secFindings = sortFindings(secFindings);
   secStats.findingsCount = secFindings.length;
   if (!secIsSilent && !isSilent) {
+    emitSecurityEvent('security_finding', { finding });
     emitSecurityEvent('security_finding_added', finding);
     emitSecurityStats();
   }
 }
 
 function emitSecurityLog(message, type = 'info') {
+  if (secIsSilent) return;
   emitSecurityEvent('security_log', {
     message,
     type,
@@ -415,8 +432,11 @@ function emitSecurityLog(message, type = 'info') {
 }
 
 function emitSecurityStats() {
+  if (secIsSilent) return;
   emitSecurityEvent('security_stats', { stats: secStats });
 }
+
+let secIsSilent = false;
 
 // ── Main Security Scan Orchestrator ──────────────────────────────────────────
 async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
@@ -430,6 +450,7 @@ async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
 
   secIsRunning = true;
   secIsStopped = false;
+  secIsSilent = isSilent;
   secFindings = [];
   secStats = {
     urlsAnalyzed: 0,
