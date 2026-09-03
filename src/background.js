@@ -345,13 +345,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       summary: summarizeFindings(secFindings),
       networkLogs: networkLogs.slice(0, 150),
       isNetworkLoggingEnabled,
+      networkTargetHost,
     });
     return true;
   }
   if (request.action === 'toggle_network_logging') {
     isNetworkLoggingEnabled = request.enabled !== undefined ? request.enabled : !isNetworkLoggingEnabled;
-    chrome.storage.local.set({ isNetworkLoggingEnabled });
-    sendResponse({ isNetworkLoggingEnabled });
+    if (request.targetUrl) {
+      try {
+        networkTargetHost = new URL(request.targetUrl).hostname;
+      } catch {}
+    }
+    if (request.tabId) {
+      networkTargetTabId = request.tabId;
+    }
+    chrome.storage.local.set({ isNetworkLoggingEnabled, networkTargetHost, networkTargetTabId });
+    sendResponse({ isNetworkLoggingEnabled, networkTargetHost });
     return true;
   }
   if (request.action === 'clear_network_logs') {
@@ -370,20 +379,51 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ── Real-time Network Traffic Inspector (chrome.webRequest) ─────────────────
 const networkLogs = [];
 const MAX_NETWORK_LOGS = 200;
-let isNetworkLoggingEnabled = false; // Varsayılan olarak kapalı, kullanıcı 'Start' diyerek başlatır
+let isNetworkLoggingEnabled = false; // Varsayılan olarak kapalı
+let networkTargetHost = ''; // Yalnızca hedeflenen sunucu domaini
+let networkTargetTabId = null; // Hedeflenen sekme ID
 
-chrome.storage.local.get(['isNetworkLoggingEnabled'], (res) => {
+chrome.storage.local.get(['isNetworkLoggingEnabled', 'networkTargetHost', 'networkTargetTabId'], (res) => {
   if (res && res.isNetworkLoggingEnabled !== undefined) {
     isNetworkLoggingEnabled = res.isNetworkLoggingEnabled;
+  }
+  if (res && res.networkTargetHost) {
+    networkTargetHost = res.networkTargetHost;
+  }
+  if (res && res.networkTargetTabId) {
+    networkTargetTabId = res.networkTargetTabId;
   }
 });
 
 if (chrome?.webRequest) {
   chrome.webRequest.onCompleted.addListener(
     (details) => {
-      // Eğer kullanıcı ağ dinlemeyi durdurduysa işlem yapma
+      // 1. Kullanıcı kaydı durdurduysa atla
       if (!isNetworkLoggingEnabled) return;
       if (!details.url.startsWith('http://') && !details.url.startsWith('https://')) return;
+
+      // 2. YALNIZCA HEDEF SUNUCU / DOMAIN TRAFİĞİNİ YAZDIR (YouTube, diğer sekmeler elenir)
+      if (networkTargetHost) {
+        const cleanTarget = networkTargetHost.replace(/^www\./i, '').toLowerCase();
+        let reqHost = '';
+        try { reqHost = new URL(details.url).hostname.replace(/^www\./i, '').toLowerCase(); } catch {}
+
+        let initiatorHost = '';
+        if (details.initiator) {
+          try { initiatorHost = new URL(details.initiator).hostname.replace(/^www\./i, '').toLowerCase(); } catch {}
+        }
+
+        const isSameDomain = reqHost === cleanTarget || reqHost.endsWith('.' + cleanTarget);
+        const isInitiatedByTarget = initiatorHost === cleanTarget || initiatorHost.endsWith('.' + cleanTarget);
+        const isTargetTab = networkTargetTabId && details.tabId === networkTargetTabId;
+
+        // Hedef domain veya hedef sekme ile hiçbir bağı yoksa (Örn: arka plandaki YouTube sekmesi) DİREKT ELE!
+        if (!isSameDomain && !isInitiatedByTarget && !isTargetTab) {
+          return;
+        }
+      } else if (details.tabId === -1) {
+        return; // Rastgele arka plan isteklerini atla
+      }
 
       const logItem = {
         id: `${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -410,6 +450,25 @@ if (chrome?.webRequest) {
     (details) => {
       if (!isNetworkLoggingEnabled) return;
       if (!details.url.startsWith('http://') && !details.url.startsWith('https://')) return;
+
+      if (networkTargetHost) {
+        const cleanTarget = networkTargetHost.replace(/^www\./i, '').toLowerCase();
+        let reqHost = '';
+        try { reqHost = new URL(details.url).hostname.replace(/^www\./i, '').toLowerCase(); } catch {}
+
+        let initiatorHost = '';
+        if (details.initiator) {
+          try { initiatorHost = new URL(details.initiator).hostname.replace(/^www\./i, '').toLowerCase(); } catch {}
+        }
+
+        const isSameDomain = reqHost === cleanTarget || reqHost.endsWith('.' + cleanTarget);
+        const isInitiatedByTarget = initiatorHost === cleanTarget || initiatorHost.endsWith('.' + cleanTarget);
+        const isTargetTab = networkTargetTabId && details.tabId === networkTargetTabId;
+
+        if (!isSameDomain && !isInitiatedByTarget && !isTargetTab) {
+          return;
+        }
+      }
 
       const logItem = {
         id: `${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -572,6 +631,10 @@ async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
   }
   
   pageUrlGlobal = pageUrl;
+  try {
+    networkTargetHost = new URL(pageUrl).hostname;
+    networkTargetTabId = tabId || null;
+  } catch {}
 
   // Hâlâ URL yoksa hata ver
   if (!pageUrl || (!pageUrl.startsWith('http://') && !pageUrl.startsWith('https://'))) {

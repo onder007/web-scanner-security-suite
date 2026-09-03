@@ -50,6 +50,7 @@ function App() {
   const [secLogs, setSecLogs] = useState([]);
   const [networkLogs, setNetworkLogs] = useState([]);
   const [isNetworkLoggingEnabled, setIsNetworkLoggingEnabled] = useState(false);
+  const [networkTargetHost, setNetworkTargetHost] = useState('');
   const [currentTabUrl, setCurrentTabUrl] = useState('');
 
   // Aktif tab URL'sini oku (popup açılınca)
@@ -83,6 +84,7 @@ function App() {
         if (response.summary) setSecSummary(response.summary);
         if (response.networkLogs) setNetworkLogs(response.networkLogs);
         if (response.isNetworkLoggingEnabled !== undefined) setIsNetworkLoggingEnabled(response.isNetworkLoggingEnabled);
+        if (response.networkTargetHost) setNetworkTargetHost(response.networkTargetHost);
       }
     });
 
@@ -314,11 +316,20 @@ function App() {
             logs={secLogs}
             networkLogs={networkLogs}
             isNetworkLoggingEnabled={isNetworkLoggingEnabled}
-            onToggleNetworkLogging={() => {
+            networkTargetHost={networkTargetHost}
+            targetUrl={currentTabUrl}
+            onToggleNetworkLogging={(hint) => {
               const nextState = !isNetworkLoggingEnabled;
               setIsNetworkLoggingEnabled(nextState);
+              const effectiveUrl = hint || currentTabUrl;
               if (chrome?.runtime) {
-                chrome.runtime.sendMessage({ action: 'toggle_network_logging', enabled: nextState });
+                chrome.runtime.sendMessage({
+                  action: 'toggle_network_logging',
+                  enabled: nextState,
+                  targetUrl: effectiveUrl
+                }, (res) => {
+                  if (res?.networkTargetHost) setNetworkTargetHost(res.networkTargetHost);
+                });
               }
             }}
             onClearNetwork={() => {

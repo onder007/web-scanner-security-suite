@@ -233,6 +233,8 @@ const SecurityFindings = ({
   logs = [],
   networkLogs = [],
   isNetworkLoggingEnabled = false,
+  networkTargetHost = '',
+  targetUrl = '',
   onToggleNetworkLogging,
   onClearNetwork,
   isRunning
@@ -490,28 +492,34 @@ const SecurityFindings = ({
             padding: '8px 12px',
             marginBottom: '12px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem' }}>
-              <span style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: isNetworkLoggingEnabled ? '#10b981' : '#ef4444',
-                boxShadow: isNetworkLoggingEnabled ? '0 0 8px #10b981' : 'none',
-                display: 'inline-block'
-              }} />
-              <span style={{ color: isNetworkLoggingEnabled ? '#a7f3d0' : '#fca5a5', fontWeight: 600 }}>
-                {isNetworkLoggingEnabled ? 'Live Network Recording Active' : 'Network Recording Paused / Stopped'}
-              </span>
-              <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>
-                {isNetworkLoggingEnabled ? '(Listening to browser HTTP requests)' : '(Background listening stopped)'}
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem' }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: isNetworkLoggingEnabled ? '#10b981' : '#ef4444',
+                  boxShadow: isNetworkLoggingEnabled ? '0 0 8px #10b981' : 'none',
+                  display: 'inline-block'
+                }} />
+                <span style={{ color: isNetworkLoggingEnabled ? '#a7f3d0' : '#fca5a5', fontWeight: 600 }}>
+                  {isNetworkLoggingEnabled ? 'Live Target Traffic Recording Active' : 'Target Traffic Recording Paused'}
+                </span>
+              </div>
+              <div style={{ color: '#94a3b8', fontSize: '0.73rem', paddingLeft: '16px' }}>
+                🎯 <strong>Isolated Scope:</strong>{' '}
+                <span style={{ color: '#38bdf8' }}>
+                  {networkTargetHost || (targetUrl ? (() => { try { return new URL(targetUrl).hostname; } catch { return targetUrl; } })() : 'Active Scanned Host')}
+                </span>{' '}
+                <span style={{ color: '#64748b' }}>(YouTube and unrelated tabs are strictly excluded)</span>
+              </div>
             </div>
 
             {onToggleNetworkLogging && (
               <button
-                onClick={onToggleNetworkLogging}
+                onClick={() => onToggleNetworkLogging(targetUrl)}
                 style={{
-                  padding: '4px 12px',
+                  padding: '5px 14px',
                   borderRadius: '6px',
                   fontSize: '0.75rem',
                   fontWeight: 600,
@@ -521,7 +529,8 @@ const SecurityFindings = ({
                   color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
+                  gap: '5px',
+                  whiteSpace: 'nowrap',
                   boxShadow: isNetworkLoggingEnabled ? '0 2px 8px rgba(239, 68, 68, 0.4)' : '0 2px 8px rgba(16, 185, 129, 0.4)'
                 }}
               >
