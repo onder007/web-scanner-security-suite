@@ -25,6 +25,7 @@ import { detectWaf } from './security/wafDetector.js';
 import { detectTechStack } from './security/techStackDetector.js';
 import { detectErrorTraces } from './security/errorTraceDetector.js';
 import { detectDomXssSinks } from './security/domXssDetector.js';
+import { analyzeDnsEmailSecurity } from './security/dnsEmailDetector.js';
 import { saveScanToHistory } from './storage/historyDb.js';
 
 
@@ -761,6 +762,12 @@ async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
     emitSecurityLog('Checking HTTP to HTTPS redirect configuration...', 'info');
     const redirectFindings = await checkHttpToHttpsRedirect(pageUrl);
     for (const f of redirectFindings) emitSecurityFinding(f);
+
+    // ── Step 14: E-posta & Domain Güvenliği (SPF & DMARC) ─────────────────
+    if (secIsStopped) return finishSecurityScan('cancelled');
+    emitSecurityLog('Analyzing DNS records for Email Security (SPF & DMARC)...', 'info');
+    const dnsEmailFindings = await analyzeDnsEmailSecurity(pageUrl);
+    for (const f of dnsEmailFindings) emitSecurityFinding(f);
 
     finishSecurityScan('completed');
 

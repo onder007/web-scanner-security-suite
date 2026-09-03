@@ -4,6 +4,8 @@
 import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { generateSecurityPdf } from '../utils/pdfGenerator.js';
+import { calculateCompliance } from '../security/complianceEngine.js';
+import ComplianceCard from './ComplianceCard.jsx';
 
 const SEVERITY_CONFIG = {
   critical: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', label: 'Critical' },
@@ -64,6 +66,16 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
 
   const scoreColor = securityScore > 80 ? '#34d399' : securityScore > 50 ? '#fbbf24' : '#ef4444';
 
+  const compliance = useMemo(() => {
+    return calculateCompliance(findings, stats);
+  }, [findings, stats]);
+
+  const openFullTab = () => {
+    if (chrome?.tabs) {
+      chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
+    }
+  };
+
 
   return (
     <div className="glass-panel animate-slide-up sec-dashboard">
@@ -72,24 +84,34 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
           <span style={{ marginRight: '8px' }}>🛡</span>
           Security Scan
         </h2>
-        <span
-          className="status-badge"
-          style={{
-            background:
-              isRunning ? 'rgba(59, 130, 246, 0.2)' :
-              status === 'completed' ? 'rgba(16, 185, 129, 0.2)' :
-              status === 'error' ? 'rgba(239, 68, 68, 0.2)' :
-              'rgba(148, 163, 184, 0.2)',
-            color:
-              isRunning ? '#60a5fa' :
-              status === 'completed' ? '#34d399' :
-              status === 'error' ? '#f87171' :
-              '#cbd5e1',
-            textTransform: 'uppercase',
-          }}
-        >
-          {status}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            className="btn btn-outline" 
+            style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px' }}
+            onClick={openFullTab}
+            title="Open in Full Tab / Side View"
+          >
+            ⛶ Expand Tab
+          </button>
+          <span
+            className="status-badge"
+            style={{
+              background:
+                isRunning ? 'rgba(59, 130, 246, 0.2)' :
+                status === 'completed' ? 'rgba(16, 185, 129, 0.2)' :
+                status === 'error' ? 'rgba(239, 68, 68, 0.2)' :
+                'rgba(148, 163, 184, 0.2)',
+              color:
+                isRunning ? '#60a5fa' :
+                status === 'completed' ? '#34d399' :
+                status === 'error' ? '#f87171' :
+                '#cbd5e1',
+              textTransform: 'uppercase',
+            }}
+          >
+            {status}
+          </span>
+        </div>
       </div>
 
       {/* Taranabilir sayfa uyarısı */}
@@ -194,25 +216,49 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '16px', marginBottom: '24px' }}>
-            {/* Score */}
+          <div style={{ display: 'grid', gridTemplateColumns: '130px 100px 1fr', gap: '12px', marginBottom: '20px' }}>
+            {/* Big Letter Grade Badge */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(15, 23, 42, 0.65)',
+              borderRadius: '12px',
+              border: `1px solid ${compliance.letterGrade.color}44`,
+              padding: '12px 8px',
+              boxShadow: `0 0 20px ${compliance.letterGrade.color}15`,
+              position: 'relative'
+            }}>
+              <span style={{ fontSize: '2.4rem', fontWeight: 900, color: compliance.letterGrade.color, lineHeight: 1 }}>
+                {compliance.letterGrade.grade}
+              </span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: compliance.letterGrade.color, marginTop: '4px', textAlign: 'center' }}>
+                {compliance.letterGrade.label}
+              </span>
+              <span style={{ fontSize: '0.6rem', color: '#64748b', marginTop: '2px', textTransform: 'uppercase' }}>
+                Security Grade
+              </span>
+            </div>
+
+            {/* Score Ring */}
             <div style={{ 
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)',
-              padding: '16px'
+              padding: '12px 8px'
             }}>
-              <svg width="64" height="64" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
+              <svg width="56" height="56" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
                 <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
                 <circle cx="18" cy="18" r="16" fill="none" stroke={scoreColor} strokeWidth="3" 
                   strokeDasharray={`${securityScore}, 100`} strokeLinecap="round" />
               </svg>
               <div style={{ 
-                position: 'absolute', fontSize: '1.2rem', fontWeight: 'bold', color: scoreColor,
+                position: 'absolute', fontSize: '1.05rem', fontWeight: 'bold', color: scoreColor,
                 textShadow: '0 0 10px rgba(0,0,0,0.5)' 
               }}>
                 {securityScore}
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '8px', textTransform: 'uppercase' }}>Score</span>
+              <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '6px', textTransform: 'uppercase' }}>Score</span>
             </div>
 
             {/* Severity Cards */}
@@ -306,6 +352,9 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
               <span className="sec-stat-key">Mixed Content</span>
             </div>
           </div>
+
+          {/* Compliance & Regulatory Readiness */}
+          <ComplianceCard compliance={compliance} />
 
           {isCompleted && (
             <p style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
