@@ -344,7 +344,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       stats: secStats,
       summary: summarizeFindings(secFindings),
       networkLogs: networkLogs.slice(0, 150),
+      isNetworkLoggingEnabled,
     });
+    return true;
+  }
+  if (request.action === 'toggle_network_logging') {
+    isNetworkLoggingEnabled = request.enabled !== undefined ? request.enabled : !isNetworkLoggingEnabled;
+    chrome.storage.local.set({ isNetworkLoggingEnabled });
+    sendResponse({ isNetworkLoggingEnabled });
     return true;
   }
   if (request.action === 'clear_network_logs') {
@@ -363,10 +370,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ── Real-time Network Traffic Inspector (chrome.webRequest) ─────────────────
 const networkLogs = [];
 const MAX_NETWORK_LOGS = 200;
+let isNetworkLoggingEnabled = false; // Varsayılan olarak kapalı, kullanıcı 'Start' diyerek başlatır
+
+chrome.storage.local.get(['isNetworkLoggingEnabled'], (res) => {
+  if (res && res.isNetworkLoggingEnabled !== undefined) {
+    isNetworkLoggingEnabled = res.isNetworkLoggingEnabled;
+  }
+});
 
 if (chrome?.webRequest) {
   chrome.webRequest.onCompleted.addListener(
     (details) => {
+      // Eğer kullanıcı ağ dinlemeyi durdurduysa işlem yapma
+      if (!isNetworkLoggingEnabled) return;
       if (!details.url.startsWith('http://') && !details.url.startsWith('https://')) return;
 
       const logItem = {
@@ -392,6 +408,7 @@ if (chrome?.webRequest) {
 
   chrome.webRequest.onErrorOccurred.addListener(
     (details) => {
+      if (!isNetworkLoggingEnabled) return;
       if (!details.url.startsWith('http://') && !details.url.startsWith('https://')) return;
 
       const logItem = {

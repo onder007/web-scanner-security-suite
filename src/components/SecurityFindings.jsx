@@ -228,7 +228,15 @@ const FindingCard = ({ finding }) => {
 };
 
 // ── Main SecurityFindings Component ──────────────────────────────────────────
-const SecurityFindings = ({ findings = [], logs = [], networkLogs = [], onClearNetwork, isRunning }) => {
+const SecurityFindings = ({
+  findings = [],
+  logs = [],
+  networkLogs = [],
+  isNetworkLoggingEnabled = false,
+  onToggleNetworkLogging,
+  onClearNetwork,
+  isRunning
+}) => {
   const [severityFilter, setSeverityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priorityTab, setPriorityTab] = useState('all'); // 'all' | 'urgent' | 'medium' | 'low_info'
@@ -471,6 +479,57 @@ const SecurityFindings = ({ findings = [], logs = [], networkLogs = [], onClearN
       {/* 🌐 Network Traffic Inspector Tab */}
       {activeTab === 'network' && (
         <div style={{ marginTop: '12px' }}>
+          {/* Status Banner */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: isNetworkLoggingEnabled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+            border: isNetworkLoggingEnabled ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            marginBottom: '12px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem' }}>
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: isNetworkLoggingEnabled ? '#10b981' : '#ef4444',
+                boxShadow: isNetworkLoggingEnabled ? '0 0 8px #10b981' : 'none',
+                display: 'inline-block'
+              }} />
+              <span style={{ color: isNetworkLoggingEnabled ? '#a7f3d0' : '#fca5a5', fontWeight: 600 }}>
+                {isNetworkLoggingEnabled ? 'Live Network Recording Active' : 'Network Recording Paused / Stopped'}
+              </span>
+              <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>
+                {isNetworkLoggingEnabled ? '(Listening to browser HTTP requests)' : '(Background listening stopped)'}
+              </span>
+            </div>
+
+            {onToggleNetworkLogging && (
+              <button
+                onClick={onToggleNetworkLogging}
+                style={{
+                  padding: '4px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: isNetworkLoggingEnabled ? '#ef4444' : '#10b981',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: isNetworkLoggingEnabled ? '0 2px 8px rgba(239, 68, 68, 0.4)' : '0 2px 8px rgba(16, 185, 129, 0.4)'
+                }}
+              >
+                {isNetworkLoggingEnabled ? '⏹️ Stop Recording' : '▶️ Start Recording'}
+              </button>
+            )}
+          </div>
+
           {/* Controls */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
             <input

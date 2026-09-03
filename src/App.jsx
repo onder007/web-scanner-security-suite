@@ -49,6 +49,7 @@ function App() {
   const [secSummary, setSecSummary] = useState({ critical: 0, high: 0, medium: 0, low: 0, info: 0, total: 0 });
   const [secLogs, setSecLogs] = useState([]);
   const [networkLogs, setNetworkLogs] = useState([]);
+  const [isNetworkLoggingEnabled, setIsNetworkLoggingEnabled] = useState(false);
   const [currentTabUrl, setCurrentTabUrl] = useState('');
 
   // Aktif tab URL'sini oku (popup açılınca)
@@ -81,6 +82,7 @@ function App() {
         if (response.stats) setSecStats(response.stats);
         if (response.summary) setSecSummary(response.summary);
         if (response.networkLogs) setNetworkLogs(response.networkLogs);
+        if (response.isNetworkLoggingEnabled !== undefined) setIsNetworkLoggingEnabled(response.isNetworkLoggingEnabled);
       }
     });
 
@@ -311,6 +313,14 @@ function App() {
             findings={secFindings}
             logs={secLogs}
             networkLogs={networkLogs}
+            isNetworkLoggingEnabled={isNetworkLoggingEnabled}
+            onToggleNetworkLogging={() => {
+              const nextState = !isNetworkLoggingEnabled;
+              setIsNetworkLoggingEnabled(nextState);
+              if (chrome?.runtime) {
+                chrome.runtime.sendMessage({ action: 'toggle_network_logging', enabled: nextState });
+              }
+            }}
             onClearNetwork={() => {
               if (chrome?.runtime) chrome.runtime.sendMessage({ action: 'clear_network_logs' });
               setNetworkLogs([]);
