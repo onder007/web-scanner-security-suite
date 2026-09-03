@@ -159,29 +159,39 @@ function App() {
   };
 
   // ── Security Scanner Handlers ───────────────────────────────────────────────
-  const handleSecurityStart = () => {
+  const handleSecurityStart = (manualUrl) => {
     if (!chrome?.runtime) return;
-    if (!chrome?.tabs) {
-      alert('chrome.tabs API not available. Make sure the extension is loaded properly.');
+
+    let target = (manualUrl || currentTabUrl || '').trim();
+    if (!target) {
+      alert('Please enter a website URL to scan.');
       return;
     }
+    if (!target.startsWith('http://') && !target.startsWith('https://')) {
+      target = 'https://' + target;
+    }
+
     // Reset logs so user sees fresh output immediately
-    setSecLogs([{ message: 'Initiating security scan...', type: 'info', timestamp: new Date().toISOString() }]);
+    setSecLogs([{ message: `Initiating security scan for ${target}...`, type: 'info', timestamp: new Date().toISOString() }]);
     setSecStatus('running');
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs?.[0];
-      if (!tab || !tab.id) {
-        setSecLogs(prev => [...prev, { message: 'Error: No active tab found.', type: 'error', timestamp: new Date().toISOString() }]);
-        setSecStatus('error');
-        return;
-      }
+    if (chrome?.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tab = tabs?.[0];
+        const isWebTab = tab?.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'));
+        chrome.runtime.sendMessage({
+          action: 'start_security_scan',
+          tabId: isWebTab ? tab.id : null,
+          url: target,
+        });
+      });
+    } else {
       chrome.runtime.sendMessage({
         action: 'start_security_scan',
-        tabId: tab.id,
-        url: tab.url || '',
+        tabId: null,
+        url: target,
       });
-    });
+    }
   };
 
   const handleSecurityStop = () => {

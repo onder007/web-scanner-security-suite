@@ -24,12 +24,21 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
   const isRunning = status === 'running';
   const isIdle = status === 'idle';
   const isCompleted = status === 'completed' || status === 'cancelled' || status === 'error';
-  const canScan = isScannableUrl(currentTabUrl);
+  const [targetInput, setTargetInput] = React.useState(currentTabUrl || '');
 
-  // URL'yi kısalt — çok uzunsa
-  let displayUrl = currentTabUrl || '';
+  React.useEffect(() => {
+    if (currentTabUrl && currentTabUrl.startsWith('http') && !targetInput) {
+      setTargetInput(currentTabUrl);
+    }
+  }, [currentTabUrl]);
+
+  const cleanTarget = (targetInput || '').trim();
+  const canScan = cleanTarget.length > 0 && !cleanTarget.startsWith('chrome://') && !cleanTarget.startsWith('chrome-extension://');
+
+  let displayUrl = cleanTarget || currentTabUrl || '';
   try {
-    const u = new URL(currentTabUrl);
+    const formatted = displayUrl.startsWith('http') ? displayUrl : 'https://' + displayUrl;
+    const u = new URL(formatted);
     displayUrl = u.hostname + (u.pathname !== '/' ? u.pathname : '');
   } catch {}
 
@@ -114,35 +123,37 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
         </div>
       </div>
 
-      {/* Taranabilir sayfa uyarısı */}
-      {!canScan && !isRunning && (
-        <div className="sec-not-scannable">
-          <span style={{ fontSize: '1.4rem' }}>⚠️</span>
-          <div>
-            <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '4px' }}>
-              Cannot scan this page
-            </strong>
-            <span>
-              {currentTabUrl
-                ? `"${currentTabUrl.substring(0, 40)}..." is not a web page.`
-                : 'No active tab detected.'}
-            </span>
-            <span style={{ display: 'block', marginTop: '4px', color: '#94a3b8' }}>
-              Navigate to an <strong>http://</strong> or <strong>https://</strong> website, then open this panel again.
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Hedef URL — taranabilirse göster */}
-      {canScan && (
-        <div className="sec-target-url">
-          <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Target</span>
-          <span className="sec-url-value" style={{ marginLeft: '10px' }} title={currentTabUrl}>
-            {displayUrl}
+      {/* Target URL Input Bar */}
+      <div style={{ marginTop: '14px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <span style={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Target Website URL
           </span>
+          {currentTabUrl && currentTabUrl.startsWith('http') && (
+            <button
+              type="button"
+              className="btn btn-outline"
+              style={{ padding: '2px 8px', fontSize: '0.7rem', color: '#60a5fa', borderColor: 'rgba(96, 165, 250, 0.3)' }}
+              onClick={() => setTargetInput(currentTabUrl)}
+              disabled={isRunning}
+              title="Auto-fill with current active tab URL"
+            >
+              📍 Use Active Tab
+            </button>
+          )}
         </div>
-      )}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            className="input-field"
+            placeholder="e.g. example.com or https://example.com"
+            value={targetInput}
+            onChange={e => setTargetInput(e.target.value)}
+            disabled={isRunning}
+            style={{ flex: 1, padding: '9px 12px', fontSize: '0.85rem' }}
+          />
+        </div>
+      </div>
 
       {/* Passive only disclaimer */}
       <div className="sec-disclaimer">
@@ -158,16 +169,16 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
           <button
             className={`btn ${canScan ? 'btn-security' : 'btn-outline'}`}
             id="sec-start-btn"
-            onClick={canScan ? onStart : undefined}
+            onClick={canScan ? () => onStart(cleanTarget) : undefined}
             disabled={!canScan}
-            title={canScan ? 'Start passive security assessment' : 'Navigate to an http/https page first'}
+            title={canScan ? 'Start passive security assessment' : 'Please enter a valid website URL'}
             style={!canScan ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            {canScan ? 'Start Security Scan' : 'Navigate to a Website First'}
+            {canScan ? 'Start Security Scan' : 'Enter a Target URL to Scan'}
           </button>
         )}
         {isRunning && (

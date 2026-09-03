@@ -468,9 +468,9 @@ async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
     emitSecurityLog('Security scan initializing...', 'info');
   }
 
-  // URL'yi chrome.tabs.get'ten al (tabs permission ile güvenilir)
-  let pageUrl = pageUrlHint || '';
-  if (tabId) {
+  // URL'yi pageUrlHint'ten veya tabId'den al
+  let pageUrl = (pageUrlHint || '').trim();
+  if (!pageUrl && tabId) {
     try {
       const tab = await chrome.tabs.get(tabId);
       if (tab && tab.url && tab.url.startsWith('http')) {
@@ -480,12 +480,17 @@ async function startSecurityScan(tabId, pageUrlHint, isSilent = false) {
       emitSecurityLog(`Could not get tab info: ${tabErr.message}`, 'warning');
     }
   }
+
+  // Protokol yoksa otomatik https:// ekle
+  if (pageUrl && !pageUrl.startsWith('http://') && !pageUrl.startsWith('https://')) {
+    pageUrl = 'https://' + pageUrl;
+  }
   
   pageUrlGlobal = pageUrl;
 
   // Hâlâ URL yoksa hata ver
   if (!pageUrl || (!pageUrl.startsWith('http://') && !pageUrl.startsWith('https://'))) {
-    emitSecurityLog(`Cannot scan: invalid or missing URL "${pageUrl}". Navigate to an http/https page first.`, 'error');
+    emitSecurityLog(`Cannot scan: invalid or missing URL "${pageUrl}". Please enter a valid website URL.`, 'error');
     finishSecurityScan('error');
     return;
   }
