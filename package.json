@@ -1,6 +1,7 @@
 {
-  "name": "dead-links-scanner",
-  "version": "1.0.0",
+  "name": "web-scanner-security-suite",
+  "version": "1.1.0",
+  "description": "Professional Web Crawler, Broken Link Finder, Deep Vulnerability Auditing and Live Network Traffic Inspector",
   "type": "module",
   "scripts": {
     "dev": "vite",

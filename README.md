@@ -1,114 +1,71 @@
-# Dead Links Scanner Chrome Extension
+# 🛡️ Web Scanner — Dead Links & Security Suite
 
-A high-performance Chrome Extension for crawling web pages and detecting broken links (404 errors) directly within the browser. Built with React, Vite, and Chrome Manifest V3.
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-v1.1.0-blue.svg?logo=google-chrome)](https://chrome.google.com/webstore)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-success.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
+[![Security Auditing](https://img.shields.io/badge/OWASP-Top%2010%20Compliant-emerald.svg)](https://owasp.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Technical Overview
+An enterprise-grade, high-performance Chrome Extension for webmasters, QA engineers, and cybersecurity professionals. Combines concurrent broken link crawling, deep passive vulnerability discovery, Google-standard CSP evaluation, email spoofing validation (SPF/DMARC), and real-time target-isolated network traffic inspection in a single, lightweight browser extension.
 
-The scanner leverages Chrome's **Manifest V3 Background Service Workers** to perform asynchronous, concurrent crawling. By operating within the background script, the extension bypasses standard web CORS restrictions, allowing it to fetch external URLs seamlessly.
+---
 
-### Core Technologies
-- **Extension API:** Manifest V3
-- **Frontend Framework:** React 18
-- **Build Tool:** Vite + CRXJS Vite Plugin
-- **HTML Parsing:** Cheerio (or Regex-based extraction)
-- **State Management:** React Hooks with Chrome Runtime Messaging
+## ⚡ Key Highlights
 
-## Architecture & Data Flow
+- **🔗 High-Speed Dead Links Crawler:** Concurrent crawling of internal and external links. Categorizes HTTP 200, 301/302 redirects, 404 broken links, and 500 server errors.
+- **🛡️ Deep Security Auditing (Passive & Safe):** Zero active attack payloads. Operates strictly via static code analysis, DOM parsing, HTTP headers, and DoH.
+- **🔐 Google CSP Evaluator Integration:** Detects `unsafe-inline`, `unsafe-eval`, missing `base-uri`, and wildcard bypass vulnerabilities according to Google security standards.
+- **📧 Email Security & Anti-Spoofing (SPF & DMARC):** Real-time DNS-over-HTTPS (DoH) queries verify whether domain SPF and DMARC policies prevent unauthorized mail forgery.
+- **🕵️ Hidden API & Route Miner:** Mines client-side JavaScript bundles for unadvertised backend endpoints (`/api/v1/...`, `/internal/...`, `/graphql`, Swagger/OpenAPI schemas).
+- **🗺️ Source Map Leak Detection:** Detects exposed `.map` files that leak raw TypeScript/React source code and unminified internal logic to the public.
+- **🔑 Client Storage & JWT Leak Audit:** Analyzes `localStorage` and `sessionStorage` for exposed JWT tokens, API keys, and credentials vulnerable to XSS exfiltration.
+- **🌐 Real-Time Network Traffic Inspector:** Live inspection of HTTP/HTTPS requests (Fetch, XHR, Scripts, CSS) with **Target Domain Isolation** (background tabs like YouTube or Spotify are strictly excluded).
+- **📋 1-Click Server Remediation Snippets:** Ready-to-copy hardening configuration blocks for **Nginx**, **Apache**, **Cloudflare**, **Next.js**, and **Vite**.
+- **📊 Compliance Readiness Scorecards:** Instant readiness calculations for **KVKK / GDPR**, **PCI-DSS v4.0**, and **OWASP Top 10**.
 
-### Process Flow
-The extension uses a background service worker to fetch and process links concurrently, bypassing standard CORS limitations.
+---
 
-```mermaid
-sequenceDiagram
-    participant UI as Dashboard (React)
-    participant SW as Background Worker
-    participant Web as Target Website
+## 🏗️ Architecture & Technical Stack
 
-    UI->>SW: Start Scan (URL)
-    activate SW
-    SW->>Web: Fetch HTML Content
-    Web-->>SW: Raw HTML Response
-    SW->>SW: Extract Links & Queue
-    SW-->>UI: Real-time Metrics & Logs
-    SW->>Web: Process Queued Links (Concurrent)
-    deactivate SW
-```
+- **Extension API:** Manifest V3 (Chrome Service Worker)
+- **Frontend UI:** React 18 SPA + Vite + Recharts + Glassmorphism Design System
+- **Network Engine:** `chrome.webRequest` (Isolated Domain Filter) & DNS-over-HTTPS (Cloudflare DoH)
+- **Security Parsers:** AST & Pattern Mining, Google CSP Rules, Retirement DB matching
+- **DOM Engine:** Content Script (`content_security.js`) running at `document_idle`
+- **Build Tooling:** `@crxjs/vite-plugin` + Rollup
 
-### System Components
+---
 
-```mermaid
-graph TD
-    A[Dashboard UI] -->|Commands| B(Background Worker)
-    B -->|Concurrent Requests| C[Target URLs]
-    C -->|HTTP Responses| B
-    B -->|Link Parser| D[Processing Queue]
-    D -->|Next Batch| B
-    B -->|State Sync| A
-    A -->|Export| E[CSV / JSON]
-    
-    style A fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
-    style B fill:#0f172a,stroke:#10b981,stroke-width:2px,color:#fff
-    style C fill:#333,stroke:#f59e0b,stroke-width:2px,color:#fff
-    style D fill:#475569,stroke:#a855f7,stroke-width:2px,color:#fff
-```
+## 🚀 Quick Start (Development & Local Testing)
 
-1. **Popup Interface (`src/App.tsx`):**
-   - Main control dashboard.
-   - Sends `START_SCAN`, `PAUSE_SCAN`, and `RESUME_SCAN` messages to the Background Service Worker via `chrome.runtime.sendMessage`.
-   - Listens to real-time progress updates (scanned URLs, broken links, queue size) via `chrome.runtime.onMessage`.
-
-2. **Background Service Worker (`src/background.ts`):**
-   - Maintains the crawling state and link queue in memory.
-   - Implements a concurrent processing queue to limit simultaneous `fetch()` requests and prevent rate-limiting or memory exhaustion.
-   - Parses fetched HTML content to extract `href` attributes, resolving relative paths against the base URL.
-   - Checks the HTTP status codes of extracted links. URLs returning `404 Not Found` (or other 4xx/5xx codes) are flagged.
-
-3. **Data Storage:**
-   - Chrome's `chrome.storage.local` API can be used to persist scan results across extension restarts.
-
-## Development & Build Instructions
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+ recommended)
-- `npm` or `yarn`
-
-### Installation
-
-1. Clone the repository and navigate to the project root:
-   ```bash
-   git clone https://github.com/onder007/dead-links-scanner.git
-   cd dead-links-scanner
-   ```
-
-2. Install the required Node dependencies:
-   ```bash
-   npm install
-   ```
-
-### Running in Development Mode
-
-To start the Vite development server with Hot Module Replacement (HMR) for the extension:
+### 1. Clone & Install
 ```bash
-npm run dev
+git clone https://github.com/onder007/web-scanner-security-suite.git
+cd web-scanner-security-suite
+npm install
 ```
 
-**Loading the unpacked extension in Chrome:**
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable **Developer mode** in the top right corner.
-3. Click **Load unpacked** and select the `dist` folder generated in your project root.
-4. *Note: As you make changes to the React code, Vite/CRXJS will automatically update the unpacked extension.*
-
-### Production Build
-
-To build the extension for production deployment:
+### 2. Build Extension
 ```bash
 npm run build
 ```
-The optimized, minified extension files will be output to the `dist` directory, ready to be zipped and uploaded to the Chrome Web Store.
+The compiled, store-ready extension will be output to the `dist/` directory.
 
-## Extensibility
+### 3. Load into Google Chrome
+1. Open Google Chrome and navigate to `chrome://extensions/`.
+2. Enable **Developer mode** in the top-right corner.
+3. Click **Load unpacked** and select the `dist/` folder.
+4. Open any website and click the Web Scanner icon in your extensions toolbar!
 
-The scanning engine is modular and can be extended to support:
-- Custom HTTP header injection (e.g., custom User-Agent).
-- Respecting `robots.txt` and `<meta name="robots">` directives.
-- Exporting raw scan datasets to JSON or CSV via Blob generation in the frontend.
+---
+
+## 🔒 Security & Privacy Policy
+
+Web Scanner operates under strict ethical guidelines:
+1. **No Exploits / No Fuzzing:** The scanner never submits attack strings, SQLi payloads, or disruptive requests to the target web server.
+2. **Local-Only Processing:** All analysis happens directly in your browser session. No telemetry, credentials, or scan reports are sent to external third parties.
+3. Review our complete [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
+
+---
+
+## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
