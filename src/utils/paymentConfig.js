@@ -3,15 +3,15 @@
 // Supports Gumroad and Lemon Squeezy with direct Wise payouts.
 
 export const PAYMENT_CONFIG = {
-  // Provider: 'gumroad' | 'lemonsqueezy' | 'custom'
-  provider: 'gumroad',
+  // Provider: 'lemonsqueezy' | 'gumroad' | 'custom'
+  provider: 'lemonsqueezy',
 
-  // Gumroad Store / Product URL (User should replace with their own Gumroad product link)
-  // When sold, Gumroad automatically pays directly into the creator's Wise multi-currency bank account.
-  checkoutUrl: 'https://gumroad.com/l/webscanner-pro',
+  // Lemon Squeezy official checkout URL for Web Scanner & Security Suite Pro
+  checkoutUrl: 'https://onder.lemonsqueezy.com/checkout/buy/c3a944ae-1513-488a-b147-f457c72baefb',
 
-  // Gumroad product permalink slug used for API verification
-  gumroadPermalink: 'webscanner-pro',
+  // Store & Product identifiers
+  storeName: 'Önder Bakır Store',
+  productId: '1344830',
 
   // Pricing display
   price: '$14',

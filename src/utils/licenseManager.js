@@ -97,7 +97,47 @@ export async function activateLicenseKey(rawKey, lang = 'tr') {
     console.error('Crypto error:', err);
   }
 
-  // 2. Online verification via Gumroad API
+  // 2. Online verification via Lemon Squeezy API
+  if (PAYMENT_CONFIG.provider === 'lemonsqueezy') {
+    try {
+      const response = await fetch('https://api.lemonsqueezy.com/v1/licenses/activate', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          license_key: key,
+          instance_name: 'Web Scanner Chrome Extension'
+        }),
+        signal: AbortSignal.timeout(6000)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.activated) {
+          const licenseInfo = {
+            isPro: true,
+            isAdmin: false,
+            key: key.length > 8 ? `${key.slice(0, 4)}••••${key.slice(-4)}` : key,
+            plan: 'Pro Lifetime',
+            email: data.meta?.customer_email || '',
+            instanceId: data.instance?.id || '',
+            activatedAt: new Date().toISOString(),
+            provider: 'Lemon Squeezy'
+          };
+          await saveLicenseData(licenseInfo);
+          return { success: true, license: licenseInfo };
+        } else if (data.error) {
+          return { success: false, error: data.error };
+        }
+      }
+    } catch {
+      // If offline or network timeout, proceed to format check
+    }
+  }
+
+  // 3. Online verification via Gumroad API (fallback)
   if (PAYMENT_CONFIG.provider === 'gumroad' && PAYMENT_CONFIG.gumroadPermalink) {
     try {
       const response = await fetch('https://api.gumroad.com/v2/licenses/verify', {

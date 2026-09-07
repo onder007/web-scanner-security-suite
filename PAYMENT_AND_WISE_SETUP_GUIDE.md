@@ -1,45 +1,26 @@
-# Web Scanner — Wise & Ödeme Altyapısı Kurulum Kılavuzu
+# Web Scanner — Lemon Squeezy & Doğrudan Banka Ödeme Altyapısı Kılavuzu
 
-Bu kılavuz, **Web Scanner** uzantınızı en karlı, en düşük komisyonlu ve sıfır şirket masrafıyla nasıl ücretli hale getireceğinizi ve ödemeleri doğrudan **Wise** hesabınıza nasıl aktaracağınızı adım adım açıklar.
+Bu kılavuz, **Web Scanner & Security Suite** eklentinizi en karlı, en düşük komisyonlu (%5 + $0.50) ve sıfır şirket masrafıyla nasıl ücretli hale getirdiğimizi ve ödemelerin doğrudan **Türk Banka (Ziraat Bankası IBAN)** hesabınıza nasıl aktarıldığını açıklar.
 
 ---
 
-## 1. Neden "Merchant of Record (Gumroad / Lemon Squeezy) + Wise" En Karlı Modeldir?
+## 1. Neden "Lemon Squeezy (Stripe) + Doğrudan Türk IBAN'ı" En Karlı Modeldir?
 
-Bir Chrome uzantısı doğrudan banka havalesi veya doğrudan kredi kartı çekimi yapamaz. Çünkü:
-- 150+ ülkenin KDV/VAT vergi yükümlülüklerini (AB KDV'si, ABD Sales Tax) tek tek beyan etmek gerekir.
-- Ters ibraz (chargeback), dolandırıcılık koruması ve kart altyapısı (Stripe/PayPal) şirket ve fatura zorunluluğu ister.
+Bir Chrome uzantısı doğrudan banka havalesi veya kredi kartı çekimi yapamaz çünkü küresel KDV (VAT) ve vergi yükümlülükleri bulunur.
 
-**En Karlı & Zahmetsiz Çözüm:**
-1. **Gumroad / Lemon Squeezy (Merchant of Record):** Müşteriden kredi kartı, Apple Pay, Google Pay ve PayPal ile $14 tahsil eder. Tüm küresel vergileri kendi üstlenir. Size şirket kurdurmaz.
+**Kurulan En Karlı & Zahmetsiz Sistem:**
+1. **Lemon Squeezy (Stripe MoR):** Dünyadaki müşteriden kredi kartı, Apple Pay veya Google Pay ile ödemeyi tahsil eder. Tüm küresel vergileri kendi üstlenir. Şirket kurma zorunluluğu yoktur.
 2. **Otomatik Lisans Üretimi:** Her ödeme yapan müşteriye benzersiz bir lisans anahtarı üretir ve anında e-postasına iletir.
-3. **Wise Payout (Doğrudan Banka Transferi):** Gumroad/Lemon Squeezy kazancınızı her hafta doğrudan **Wise USD / EUR hesabınıza** (ACH / SEPA ile sıfıra yakın komisyonla) yatırır!
-4. **Wise Kartı / IBAN:** Wise hesabınızdaki parayı ister Wise kartınızla harcarsınız, ister Türkiye'deki banka hesabınıza anında TL/USD olarak çekersiniz.
+3. **Doğrudan Banka Payout:** Lemon Squeezy, Stripe altyapısı üzerinden kazancınızı doğrudan **Türkiye'deki Ziraat Bankası IBAN** hesabınıza yatırır. Aracıya veya ek komisyonlara gerek kalmaz.
 
 ---
 
-## 2. Adım Adım Kurulum (5 Dakikada Tamamlama)
+## 2. Entegre Edilen Canlı Mağaza Bağlantısı
 
-### Adım 1: Wise Hesap Bilgilerinizi Alın
-1. [Wise.com](https://wise.com) hesabınıza giriş yapın (yoksa ücretsiz bireysel hesap açın).
-2. **"Hesaplar" (Balances)** bölümünden **USD** veya **EUR** seçin.
-3. **"Hesap Detayları" (Account Details)** butonuna tıklayın:
-   - **USD için:** Routing Number (ACH) + Account Number
-   - **EUR için:** IBAN numaranız
-4. Bu bilgileri bir kenara not edin.
-
----
-
-### Adım 2: Gumroad'da Ürününüzü Oluşturun
-1. [Gumroad.com](https://gumroad.com) üzerinde ücretsiz bir hesap açın.
-2. **Products -> New Product** seçin.
-3. Tür olarak **"Digital Product"** seçin.
-   - İsim: `Web Scanner — Dead Links & Security Pro`
-   - Fiyat: `$14` (Tek seferlik ömür boyu en yüksek dönüşüm getiren fiyattır)
-4. Ürün ayarlarında:
-   - **"Generate a unique license key for each sale"** seçeneğini mutlaka **AÇIK (Checked)** konuma getirin!
-   - Bu ayar sayesinde her satın alan kullanıcıya Gumroad otomatik lisans anahtarı verir.
-5. Ürünü **Publish** yapın ve ürün linkinizi alın (örn: `https://onder.gumroad.com/l/webscanner`).
+- **Canlı Satın Alma Bağlantısı:** `https://onder.lemonsqueezy.com/checkout/buy/c3a944ae-1513-488a-b147-f457c72baefb`
+- **Lisans Doğrulama API:** `https://api.lemonsqueezy.com/v1/licenses/activate`
+- **Model:** Lifetime ($14 / Single Payment)
+- **Aktivasyon Limiti:** 5 cihaz/tarayıcı (kullanıcı dostu & paylaşım korumalı)
 
 ---
 
