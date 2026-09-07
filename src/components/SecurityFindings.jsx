@@ -1,15 +1,15 @@
 // src/components/SecurityFindings.jsx
-// Security Scanner bulgularını listeleyen, anlık arama, risk önceliği
-// filtreleme ve tek tıkla çözüm kodları (Fix Snippets) sunan bileşen
+// Security findings inspector featuring live search, severity filters,
+// and actionable 1-click remediation code snippets.
 
 import React, { useState, useMemo } from 'react';
 import { getFixSnippets } from '../security/fixSnippetsEngine.js';
 
 const SEVERITY_CONFIG = {
-  critical: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)', border: 'rgba(239, 68, 68, 0.3)', label: 'CRITICAL' },
-  high:     { color: '#f97316', bg: 'rgba(249, 115, 22, 0.12)', border: 'rgba(249, 115, 22, 0.3)', label: 'HIGH' },
-  medium:   { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.3)', label: 'MEDIUM' },
-  low:      { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.3)', label: 'LOW' },
+  critical: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.3)', label: 'CRITICAL' },
+  high:     { color: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', border: 'rgba(249, 115, 22, 0.3)', label: 'HIGH' },
+  medium:   { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.3)', label: 'MEDIUM' },
+  low:      { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.3)', label: 'LOW' },
   info:     { color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.08)', border: 'rgba(148, 163, 184, 0.2)', label: 'INFO' },
 };
 
@@ -56,7 +56,7 @@ const FindingCard = ({ finding }) => {
   return (
     <div
       className="sec-finding-card"
-      style={{ borderLeft: `3px solid ${cfg.color}`, background: cfg.bg }}
+      style={{ borderLeft: `3px solid ${cfg.color}` }}
     >
       <div
         className="sec-finding-header"
@@ -247,13 +247,13 @@ const SecurityFindings = ({
   const [netTypeFilter, setNetTypeFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('findings'); // 'findings' | 'network' | 'logs'
 
-  // Scan başlayınca Logs'a, bitince Findings'e geç
+  // Switch to logs while scan is running; switch to findings when complete
   React.useEffect(() => {
     if (isRunning) setActiveTab('logs');
     else if (!isRunning && findings.length > 0) setActiveTab('findings');
   }, [isRunning, findings.length]);
 
-  // Logs otomatik scroll
+  // Auto-scroll live log stream
   const logsRef = React.useRef(null);
   React.useEffect(() => {
     if (logsRef.current) logsRef.current.scrollTop = logsRef.current.scrollHeight;
@@ -342,27 +342,46 @@ const SecurityFindings = ({
     document.body.removeChild(link);
   };
 
+  const urgentCount = findings.filter(f => f.severity === 'critical' || f.severity === 'high').length;
+  const mediumCount = findings.filter(f => f.severity === 'medium').length;
+  const lowCount = findings.filter(f => f.severity === 'low' || f.severity === 'info').length;
+
   return (
     <div className="glass-panel animate-slide-up" style={{ animationDelay: '0.1s' }}>
-      {/* Tab bar */}
+      {/* Subtab Navigation */}
       <div className="sec-subtab-bar">
         <button
           className={`sec-subtab ${activeTab === 'findings' ? 'active' : ''}`}
           onClick={() => setActiveTab('findings')}
         >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
           Findings ({findings.length})
         </button>
         <button
           className={`sec-subtab ${activeTab === 'network' ? 'active' : ''}`}
           onClick={() => setActiveTab('network')}
         >
-          🌐 Network ({networkLogs.length})
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          Network Inspector ({networkLogs.length})
         </button>
         <button
           className={`sec-subtab ${activeTab === 'logs' ? 'active' : ''}`}
           onClick={() => setActiveTab('logs')}
         >
-          Logs
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          Scan Logs
         </button>
       </div>
 
@@ -370,21 +389,21 @@ const SecurityFindings = ({
       {activeTab === 'findings' && (
         <>
           {findings.length > 0 && (
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '14px' }}>
               {/* Instant Search Bar */}
               <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="🔍 Search title, evidence, parameter, URL..."
+                  placeholder="Filter findings by title, evidence, parameter, or URL..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  style={{ flex: 1, padding: '8px 12px', fontSize: '0.85rem' }}
+                  style={{ flex: 1, padding: '7px 12px', fontSize: '0.8125rem' }}
                 />
                 {searchQuery && (
                   <button 
                     className="btn btn-outline" 
-                    style={{ padding: '4px 10px', fontSize: '0.8rem' }}
+                    style={{ padding: '4px 10px', fontSize: '0.78rem' }}
                     onClick={() => setSearchQuery('')}
                   >
                     Clear
@@ -393,12 +412,12 @@ const SecurityFindings = ({
               </div>
 
               {/* Actionable Risk Priority Pills */}
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+              <div style={{ display: 'flex', gap: '5px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '2px' }}>
                 {[
-                  { id: 'all', label: `All (${findings.length})` },
-                  { id: 'urgent', label: `🔥 Urgent (${findings.filter(f => f.severity === 'critical' || f.severity === 'high').length})`, color: '#ef4444' },
-                  { id: 'medium', label: `⚠️ Medium (${findings.filter(f => f.severity === 'medium').length})`, color: '#f59e0b' },
-                  { id: 'low_info', label: `ℹ️ Low & Info (${findings.filter(f => f.severity === 'low' || f.severity === 'info').length})`, color: '#3b82f6' },
+                  { id: 'all', label: 'All', count: findings.length },
+                  { id: 'urgent', label: 'Urgent', count: urgentCount, color: '#ef4444' },
+                  { id: 'medium', label: 'Medium', count: mediumCount, color: '#f59e0b' },
+                  { id: 'low_info', label: 'Low & Info', count: lowCount, color: '#3b82f6' },
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -406,26 +425,38 @@ const SecurityFindings = ({
                     style={{
                       padding: '4px 10px',
                       fontSize: '0.75rem',
-                      borderRadius: '16px',
-                      border: priorityTab === tab.id ? `1px solid ${tab.color || '#3b82f6'}` : '1px solid rgba(255,255,255,0.08)',
-                      background: priorityTab === tab.id ? `${tab.color || '#3b82f6'}22` : 'rgba(0,0,0,0.2)',
-                      color: priorityTab === tab.id ? (tab.color || '#60a5fa') : '#94a3b8',
-                      fontWeight: priorityTab === tab.id ? 700 : 500,
+                      borderRadius: '5px',
+                      border: priorityTab === tab.id ? `1px solid ${tab.color || '#3b82f6'}` : '1px solid var(--border-subtle)',
+                      background: priorityTab === tab.id ? (tab.color ? `${tab.color}18` : 'rgba(59, 130, 246, 0.15)') : '#090a0f',
+                      color: priorityTab === tab.id ? (tab.color || '#93c5fd') : '#94a3b8',
+                      fontWeight: priorityTab === tab.id ? 600 : 500,
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
-                      transition: 'all 0.2s'
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      transition: 'all 0.12s ease'
                     }}
                   >
-                    {tab.label}
+                    <span>{tab.label}</span>
+                    <span style={{
+                      fontSize: '0.6875rem',
+                      padding: '1px 5px',
+                      borderRadius: '3px',
+                      background: 'rgba(255, 255, 255, 0.07)',
+                      color: '#cbd5e1'
+                    }}>
+                      {tab.count}
+                    </span>
                   </button>
                 ))}
               </div>
 
               {/* Filters & Export */}
-              <div className="sec-filters" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="sec-filters" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <select
                   className="input-field"
-                  style={{ width: 'auto', padding: '6px 10px', fontSize: '0.8rem' }}
+                  style={{ width: 'auto', padding: '5px 10px', fontSize: '0.78rem' }}
                   value={severityFilter}
                   onChange={e => setSeverityFilter(e.target.value)}
                   id="sec-severity-filter"
@@ -440,7 +471,7 @@ const SecurityFindings = ({
 
                 <select
                   className="input-field"
-                  style={{ width: 'auto', padding: '6px 10px', fontSize: '0.8rem' }}
+                  style={{ width: 'auto', padding: '5px 10px', fontSize: '0.78rem' }}
                   value={categoryFilter}
                   onChange={e => setCategoryFilter(e.target.value)}
                   id="sec-category-filter"

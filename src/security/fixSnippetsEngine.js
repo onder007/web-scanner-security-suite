@@ -233,8 +233,8 @@ export function getFixSnippets(finding) {
     return [
       {
         server: 'DNS TXT Record (Zone)',
-        path: 'DNS Management Console (Cloudflare, GoDaddy vb.)',
-        code: `Name: @\nType: TXT\nTTL: Auto\nValue: v=spf1 include:_spf.google.com ~all\n\n# (Not: Kendi e-posta sağlayıcınızın include adresini ekleyin)`
+        path: 'DNS Management Console (Cloudflare, AWS Route53, GoDaddy, etc.)',
+        code: `Name: @\nType: TXT\nTTL: Auto\nValue: v=spf1 include:_spf.google.com ~all\n\n# (Note: Replace with your actual authorized mail provider directive)`
       }
     ];
   }
@@ -277,7 +277,7 @@ export function getFixSnippets(finding) {
       {
         server: 'JavaScript (Origin Validation)',
         path: 'Client-side script',
-        code: `window.addEventListener('message', (event) => {\n  // 1. Her zaman gönderici origin'i denetleyin\n  if (event.origin !== 'https://trusted-domain.com') return;\n\n  // 2. Veriyi güvenle işleyin\n  console.log('Valid message received:', event.data);\n});`
+        code: `window.addEventListener('message', (event) => {\n  // 1. Always verify event.origin strictly\n  if (event.origin !== 'https://trusted-domain.com') return;\n\n  // 2. Process data safely\n  console.log('Valid message received:', event.data);\n});`
       }
     ];
   }
@@ -288,7 +288,7 @@ export function getFixSnippets(finding) {
       {
         server: 'Express.js (HttpOnly Cookie)',
         path: 'Backend Auth Controller',
-        code: `// JWT'yi localStorage yerine HttpOnly çerezde saklayın:\nres.cookie('token', jwtToken, {\n  httpOnly: true,\n  secure: process.env.NODE_ENV === 'production',\n  sameSite: 'strict'\n});`
+        code: `// Store JWT in HttpOnly cookie instead of localStorage:\nres.cookie('token', jwtToken, {\n  httpOnly: true,\n  secure: process.env.NODE_ENV === 'production',\n  sameSite: 'strict'\n});`
       }
     ];
   }

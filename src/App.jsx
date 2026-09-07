@@ -6,11 +6,21 @@ import SettingsPanel from './components/SettingsPanel';
 import SecurityDashboard from './components/SecurityDashboard.jsx';
 import SecurityFindings from './components/SecurityFindings.jsx';
 import SecurityHistory from './components/SecurityHistory.jsx';
+import LicenseModal from './components/LicenseModal.jsx';
+import { getLicenseData } from './utils/licenseManager';
 import './styles/App.css';
 
 function App() {
   // ── Main Tab State ──────────────────────────────────────────────────────────
   const [activeMainTab, setActiveMainTab] = useState('deadlinks'); // 'deadlinks' | 'security' | 'history'
+
+  // ── Licensing / Pro Tier State ─────────────────────────────────────────────
+  const [licenseData, setLicenseData] = useState({ isPro: false, key: null, plan: 'Free' });
+  const [isLicenseModalOpen, setIsLicenseModalOpen] = useState(false);
+
+  useEffect(() => {
+    getLicenseData().then(setLicenseData);
+  }, []);
 
   // ── Dead Link Scanner State (unchanged) ────────────────────────────────────
   const [url, setUrl] = useState('');
@@ -53,7 +63,7 @@ function App() {
   const [networkTargetHost, setNetworkTargetHost] = useState('');
   const [currentTabUrl, setCurrentTabUrl] = useState('');
 
-  // Aktif tab URL'sini oku (popup açılınca)
+  // Read active tab URL when popup initializes
   useEffect(() => {
     if (!chrome?.tabs) return;
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -209,42 +219,84 @@ function App() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="app-container" style={{ padding: '16px' }}>
+    <div className="app-container">
       {/* Header */}
-      <header className="glass-panel animate-slide-up header-panel">
+      <header className="header-panel">
         <div className="header-content">
-          <h1>Web Scanner</h1>
-          <p className="subtitle">Browser Extension — Dead Links &amp; Security</p>
-        </div>
+          <div className="header-brand">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h1>Web Scanner</h1>
+                <span className="header-badge">v1.1</span>
+              </div>
+              <p className="subtitle">Passive Security Audit &amp; Broken Link Inspector</p>
+            </div>
+          </div>
 
-        {/* Main Tab Navigation */}
-        <div className="main-tab-bar">
-          <button
-            id="tab-deadlinks"
-            className={`main-tab ${activeMainTab === 'deadlinks' ? 'active' : ''}`}
-            onClick={() => setActiveMainTab('deadlinks')}
-          >
-            🔗 Dead Links
-          </button>
-          <button
-            id="tab-security"
-            className={`main-tab ${activeMainTab === 'security' ? 'active-security active' : ''}`}
-            onClick={() => setActiveMainTab('security')}
-          >
-            🛡 Security
-          </button>
-          <button
-            id="tab-history"
-            className={`main-tab ${activeMainTab === 'history' ? 'active' : ''}`}
-            onClick={() => setActiveMainTab('history')}
-          >
-            🗂️ History
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Main Tab Navigation */}
+            <div className="main-tab-bar">
+              <button
+                id="tab-deadlinks"
+                className={`main-tab ${activeMainTab === 'deadlinks' ? 'active' : ''}`}
+                onClick={() => setActiveMainTab('deadlinks')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                Broken Links
+              </button>
+              <button
+                id="tab-security"
+                className={`main-tab ${activeMainTab === 'security' ? 'active-security active' : ''}`}
+                onClick={() => setActiveMainTab('security')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                Security Audit
+              </button>
+              <button
+                id="tab-history"
+                className={`main-tab ${activeMainTab === 'history' ? 'active' : ''}`}
+                onClick={() => setActiveMainTab('history')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Audit History
+              </button>
+            </div>
+
+            {/* Pro Badge / Upgrade Button */}
+            <button
+              className={`pro-badge-btn ${licenseData?.isPro ? 'pro-badge-active' : ''}`}
+              onClick={() => setIsLicenseModalOpen(true)}
+              title={licenseData?.isPro ? 'Pro Active — Click for license details' : 'Upgrade to Pro License'}
+            >
+              {licenseData?.isPro ? (
+                <>
+                  <span>👑</span>
+                  <span>PRO ACTIVE</span>
+                </>
+              ) : (
+                <>
+                  <span>💎</span>
+                  <span>PRO</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Dead Links URL Input — only shown on deadlinks tab */}
         {activeMainTab === 'deadlinks' && (
-          <div className="control-bar">
+          <div className="control-bar" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
             <input
               type="url"
               className="input-field url-input"
@@ -253,28 +305,38 @@ function App() {
               onChange={(e) => setUrl(e.target.value)}
               disabled={status === 'running' || status === 'paused'}
               id="deadlinks-url-input"
+              style={{ flex: 1 }}
             />
-            <div className="button-group">
+            <div className="button-group" style={{ display: 'flex', gap: '8px' }}>
               {status === 'idle' || status === 'completed' || status === 'stopped' ? (
                 <button className="btn btn-primary" id="deadlinks-start-btn" onClick={handleStart}>
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  Start Scan
+                  <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                  Scan Links
                 </button>
               ) : status === 'running' ? (
                 <>
                   <button className="btn btn-warning" id="deadlinks-pause-btn" onClick={handlePause}>
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <rect x="6" y="4" width="4" height="16"/>
+                      <rect x="14" y="4" width="4" height="16"/>
+                    </svg>
                     Pause
                   </button>
                   <button className="btn btn-danger" id="deadlinks-stop-btn" onClick={handleStop}>
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10h6v4H9z" /></svg>
+                    <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+                      <rect x="5" y="5" width="14" height="14" rx="2"/>
+                    </svg>
                     Stop
                   </button>
                 </>
               ) : status === 'paused' ? (
                 <>
-                  <button className="btn btn-success" id="deadlinks-resume-btn" onClick={handleResume} style={{ backgroundColor: 'var(--success)', color: 'white', border: 'none', boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.39)' }}>
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /></svg>
+                  <button className="btn btn-success" id="deadlinks-resume-btn" onClick={handleResume}>
+                    <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+                      <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
                     Resume
                   </button>
                   <button className="btn btn-danger" id="deadlinks-stop-btn-2" onClick={handleStop}>Stop</button>
@@ -347,6 +409,14 @@ function App() {
           <SecurityHistory />
         </div>
       )}
+
+      {/* ── Pro License Modal ────────────────────────────────────────────── */}
+      <LicenseModal
+        isOpen={isLicenseModalOpen}
+        onClose={() => setIsLicenseModalOpen(false)}
+        licenseData={licenseData}
+        onLicenseUpdated={setLicenseData}
+      />
     </div>
   );
 }

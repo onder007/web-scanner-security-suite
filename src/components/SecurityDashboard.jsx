@@ -227,27 +227,26 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '130px 100px 1fr', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '130px 100px 1fr', gap: '8px', marginBottom: '16px' }}>
             {/* Big Letter Grade Badge */}
             <div style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'rgba(15, 23, 42, 0.65)',
-              borderRadius: '12px',
-              border: `1px solid ${compliance.letterGrade.color}44`,
-              padding: '12px 8px',
-              boxShadow: `0 0 20px ${compliance.letterGrade.color}15`,
+              background: '#0d0f15',
+              borderRadius: '8px',
+              border: `1px solid ${compliance.letterGrade.color}55`,
+              padding: '10px 8px',
               position: 'relative'
             }}>
-              <span style={{ fontSize: '2.4rem', fontWeight: 900, color: compliance.letterGrade.color, lineHeight: 1 }}>
+              <span style={{ fontSize: '2.2rem', fontWeight: 800, color: compliance.letterGrade.color, lineHeight: 1 }}>
                 {compliance.letterGrade.grade}
               </span>
-              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: compliance.letterGrade.color, marginTop: '4px', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.625rem', fontWeight: 600, color: compliance.letterGrade.color, marginTop: '4px', textAlign: 'center' }}>
                 {compliance.letterGrade.label}
               </span>
-              <span style={{ fontSize: '0.6rem', color: '#64748b', marginTop: '2px', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '0.58rem', color: '#64748b', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Security Grade
               </span>
             </div>
@@ -255,31 +254,31 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
             {/* Score Ring */}
             <div style={{ 
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)',
-              padding: '12px 8px'
+              background: '#0d0f15', borderRadius: '8px', border: '1px solid var(--border-subtle)',
+              padding: '10px 8px', position: 'relative'
             }}>
-              <svg width="56" height="56" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
-                <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                <circle cx="18" cy="18" r="16" fill="none" stroke={scoreColor} strokeWidth="3" 
+              <svg width="52" height="52" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+                <circle cx="18" cy="18" r="15.5" fill="none" stroke={scoreColor} strokeWidth="3" 
                   strokeDasharray={`${securityScore}, 100`} strokeLinecap="round" />
               </svg>
               <div style={{ 
-                position: 'absolute', fontSize: '1.05rem', fontWeight: 'bold', color: scoreColor,
-                textShadow: '0 0 10px rgba(0,0,0,0.5)' 
+                position: 'absolute', fontSize: '1rem', fontWeight: 700, color: scoreColor,
+                top: '23px', fontVariantNumeric: 'tabular-nums'
               }}>
                 {securityScore}
               </div>
-              <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '6px', textTransform: 'uppercase' }}>Score</span>
+              <span style={{ fontSize: '0.625rem', color: '#94a3b8', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Score</span>
             </div>
 
             {/* Severity Cards */}
-            <div className="sec-severity-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))' }}>
+            <div className="sec-severity-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
               {Object.entries(SEVERITY_CONFIG).map(([key, cfg]) => (
-                <div key={key} className="sec-severity-card" style={{ borderColor: cfg.color + '44', background: cfg.bg, padding: '8px 4px' }}>
-                  <span className="sec-severity-count" style={{ color: cfg.color, fontSize: '1.2rem' }}>
+                <div key={key} className="sec-severity-card" style={{ borderLeft: `2px solid ${cfg.color}`, padding: '8px 4px' }}>
+                  <span className="sec-severity-count" style={{ color: cfg.color, fontSize: '1.15rem' }}>
                     {summary[key] || 0}
                   </span>
-                  <span className="sec-severity-label" style={{ color: cfg.color, fontSize: '0.65rem' }}>
+                  <span className="sec-severity-label" style={{ color: '#94a3b8', fontSize: '0.625rem' }}>
                     {cfg.label}
                   </span>
                 </div>
@@ -287,23 +286,23 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
             </div>
           </div>
 
-          <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
             Visual Reports
           </h3>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
             {/* Pie Chart */}
-            <div style={{ height: '180px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', padding: '12px' }}>
-              <h4 style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', marginBottom: '8px' }}>By Severity</h4>
+            <div style={{ height: '170px', background: '#0d0f15', borderRadius: '8px', border: '1px solid var(--border-subtle)', padding: '10px' }}>
+              <h4 style={{ fontSize: '0.6875rem', color: '#94a3b8', textAlign: 'center', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>By Severity</h4>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={severityData}
                     cx="50%"
-                    cy="50%"
-                    innerRadius={30}
-                    outerRadius={50}
-                    paddingAngle={5}
+                    cy="45%"
+                    innerRadius={28}
+                    outerRadius={48}
+                    paddingAngle={4}
                     dataKey="value"
                   >
                     {severityData.map((entry, index) => (
@@ -311,7 +310,7 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid #334155', borderRadius: '8px' }}
+                    contentStyle={{ backgroundColor: '#090a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '0.75rem' }}
                     itemStyle={{ color: '#e2e8f0' }}
                   />
                 </PieChart>
@@ -319,18 +318,18 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
             </div>
 
             {/* Bar Chart */}
-            <div style={{ height: '180px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', padding: '12px' }}>
-              <h4 style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', marginBottom: '8px' }}>By Category</h4>
+            <div style={{ height: '170px', background: '#0d0f15', borderRadius: '8px', border: '1px solid var(--border-subtle)', padding: '10px' }}>
+              <h4 style={{ fontSize: '0.6875rem', color: '#94a3b8', textAlign: 'center', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>By Category</h4>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
+                <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
                   <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} axisLine={false} tickLine={false} />
                   <Tooltip 
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid #334155', borderRadius: '8px' }}
+                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                    contentStyle={{ backgroundColor: '#090a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '0.75rem' }}
                   />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={12} />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[0, 3, 3, 0]} barSize={10} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
