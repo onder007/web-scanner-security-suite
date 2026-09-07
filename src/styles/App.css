@@ -424,9 +424,10 @@
 .logs-container {
   background-color: #06070a;
   border-radius: var(--radius-md);
-  padding: 12px;
+  padding: 10px 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
+  max-height: 130px;
   overflow-y: auto;
   border: 1px solid var(--border-subtle);
 }

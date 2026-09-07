@@ -627,7 +627,7 @@ const SecurityFindings = ({
 
       {/* Logs Tab */}
       {activeTab === 'logs' && (
-        <div ref={logsRef} className="logs-container" style={{ marginTop: '12px', maxHeight: '400px' }}>
+        <div ref={logsRef} className="logs-container" style={{ marginTop: '12px', maxHeight: '150px' }}>
           {logs.length === 0 ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No log messages yet.</div>
           ) : (
