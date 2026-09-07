@@ -101,19 +101,17 @@ export const translations = {
     featNetwork: 'Canlı Ağ Paketi İnceleyici: Başlık ve istek kurcalama analizi',
     featExport: 'Yönetici Raporu: Anında PDF Güvenlik Denetim Raporu & CSV Çıktısı',
     getLicenseKeyBtn: 'Lisans Satın Al ($14 Ömür Boyu)',
-    licenseInputPlaceholder: 'Lisans veya Admin anahtarını girin (örn. onder123)',
+    licenseInputPlaceholder: 'Lisans anahtarınızı girin...',
     activateBtn: 'Etkinleştir',
     verifying: 'Doğrulanıyor...',
-    adminHint: 'Admin / Test anahtarı:',
-    applyAdminKey: 'Admin Anahtarını Uygula (onder123)',
-    successActivated: 'Lisans başarıyla etkinleştirildi. Tüm Pro & Admin özellikleri açıldı.',
-    errorKeyRequired: 'Lütfen bir lisans anahtarı girin.',
+    successActivated: 'Lisans başarıyla etkinleştirildi. Tüm özellikler sınırsız açıldı.',
+    errorKeyRequired: 'Lütfen geçerli bir lisans anahtarı girin.',
     keyGatePrompt: 'Uzantıyı tam yetkiyle kullanmak için lisans anahtarınızı girin.',
 
     // First time banner
-    gateBannerTitle: 'Ücretsiz Moddasınız',
+    gateBannerTitle: 'Ücretsiz Mod',
     gateBannerDesc: 'Tüm özellikleri sınırsız kullanmak için lisans anahtarınızı girin.',
-    gateBannerBtn: 'Anahtar Gir (onder123)'
+    gateBannerBtn: 'Lisansı Etkinleştir'
   },
   en: {
     // Header & Tabs
@@ -214,18 +212,16 @@ export const translations = {
     featNetwork: 'Live Network Traffic Inspector: Packet capture & tampering analysis',
     featExport: 'Executive Export: Instant PDF security audit & CSV reporting',
     getLicenseKeyBtn: 'Get License Key ($14 Lifetime)',
-    licenseInputPlaceholder: 'Enter license or admin key (e.g. onder123)',
+    licenseInputPlaceholder: 'Enter your license key...',
     activateBtn: 'Activate',
     verifying: 'Verifying...',
-    adminHint: 'Admin / Test key:',
-    applyAdminKey: 'Apply Admin Key (onder123)',
     successActivated: 'Successfully activated. All Pro & Admin features unlocked.',
     errorKeyRequired: 'Please enter a valid license key.',
     keyGatePrompt: 'Enter your license key to unlock full features.',
 
     // First time banner
-    gateBannerTitle: 'Running Free Mode',
-    gateBannerDesc: 'Enter your license or admin key to unlock unrestricted scans.',
-    gateBannerBtn: 'Enter Key (onder123)'
+    gateBannerTitle: 'Free Mode Active',
+    gateBannerDesc: 'Enter your license key to unlock unrestricted scans.',
+    gateBannerBtn: 'Activate License'
   }
 };

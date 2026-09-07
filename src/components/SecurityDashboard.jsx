@@ -420,14 +420,6 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
 
           {/* Compliance & Regulatory Readiness */}
           <ComplianceCard compliance={compliance} lang={lang} />
-
-          {isCompleted && (
-            <p style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-              {lang === 'tr'
-                ? 'Yalnızca otomatik değerlendirmedir. Sonuçlar kesin güvenlik açığı teşkil etmez ve uzman geliştirici doğrulaması gerektirir.'
-                : 'Automated assessment only. Results do not confirm vulnerabilities and require manual verification.'}
-            </p>
-          )}
         </div>
       )}
 

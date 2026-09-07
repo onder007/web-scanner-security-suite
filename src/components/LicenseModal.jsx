@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { activateLicenseKey, deactivateLicense } from '../utils/licenseManager';
 import { translations } from '../utils/i18n';
-
-const GUMROAD_STORE_URL = 'https://gumroad.com'; // Kendi Gumroad veya LemonSqueezy linkiniz
+import { PAYMENT_CONFIG } from '../utils/paymentConfig';
 
 const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = 'tr' }) => {
   const [keyInput, setKeyInput] = useState('');
@@ -24,7 +23,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
     setSuccessMsg('');
     setLoading(true);
 
-    const res = await activateLicenseKey(key);
+    const res = await activateLicenseKey(key, lang);
     setLoading(false);
 
     if (res.success) {
@@ -35,7 +34,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
         setSuccessMsg('');
       }, 1500);
     } else {
-      setErrorMsg(res.error || 'Aktivasyon başarısız.');
+      setErrorMsg(res.error || (lang === 'tr' ? 'Aktivasyon başarısız.' : 'Activation failed.'));
     }
   };
 
@@ -90,7 +89,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
               {t.currentPlan}:{' '}
             </span>
             <strong style={{ fontSize: '0.85rem', color: licenseData?.isPro ? '#10b981' : 'var(--text-primary)' }}>
-              {licenseData?.isAdmin ? 'Yönetici (Admin Aktif)' : licenseData?.isPro ? 'PRO Aktif' : t.freePlan}
+              {licenseData?.isAdmin ? (lang === 'tr' ? 'Yönetici (Admin)' : 'Admin Full Access') : licenseData?.isPro ? 'PRO' : t.freePlan}
             </strong>
           </div>
           {licenseData?.isPro && (
@@ -125,7 +124,9 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
           {licenseData?.isPro ? (
             <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(16, 185, 129, 0.06)', borderRadius: '8px' }}>
               <p style={{ margin: 0, color: '#10b981', fontSize: '0.8125rem', fontWeight: 600 }}>
-                {licenseData?.isAdmin ? 'Yönetici (Admin) Anahtarı Aktif — Tüm Özellikler Sınırsız Açık!' : 'Tüm Pro güvenlik ve tarama araçlarına sınırsız ömür boyu erişiminiz var!'}
+                {licenseData?.isAdmin 
+                  ? (lang === 'tr' ? 'Yönetici (Admin) Erişimi Aktif — Tüm Özellikler Sınırsız Açık!' : 'Administrator Access Active — All Features Unrestricted!') 
+                  : (lang === 'tr' ? 'Tüm Pro güvenlik ve tarama araçlarına sınırsız ömür boyu erişiminiz var!' : 'You have lifetime unrestricted access to all Pro audit tools!')}
               </p>
               <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '0.7rem', fontFamily: 'monospace' }}>
                 Key: {licenseData.key?.slice(0, 8)}••••••••
@@ -136,7 +137,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
               {/* Buy Link */}
               <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                 <a
-                  href={GUMROAD_STORE_URL}
+                  href={PAYMENT_CONFIG.checkoutUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn-pro-upgrade"
@@ -170,30 +171,6 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
                 >
                   {loading ? t.verifying : t.activateBtn}
                 </button>
-              </div>
-
-              {/* Quick Admin Key: onder123 */}
-              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(59, 130, 246, 0.05)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.15)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    {lang === 'tr' ? 'Özel Yönetici (Admin) Anahtarı:' : 'Master Admin Test Key:'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleActivate('onder123')}
-                    style={{
-                      background: 'rgba(59, 130, 246, 0.15)', border: '1px solid #3b82f6', color: '#60a5fa', fontSize: '0.72rem',
-                      cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', fontWeight: 600
-                    }}
-                  >
-                    {lang === 'tr' ? 'onder123 Anahtarını Uygula' : 'Apply onder123 Key'}
-                  </button>
-                </div>
-                <span style={{ fontSize: '0.67rem', color: 'var(--text-muted)' }}>
-                  {lang === 'tr'
-                    ? '(Kendi uzantında onder123 yazarak tüm Pro & Admin özelliklerini anında açabilirsin)'
-                    : '(Enter onder123 to unlock all Pro and Admin features immediately)'}
-                </span>
               </div>
             </>
           )}
