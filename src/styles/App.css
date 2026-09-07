@@ -801,31 +801,41 @@ tr:hover {
   flex-wrap: wrap;
 }
 
-.header-tools-group {
+/* ── Header Top-Right Action Icons ───────────────────────────────────── */
+.header-actions-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.header-icon-btn {
-  background: transparent;
+.header-icon-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 4px 8px;
-  font-size: 0.72rem;
   color: var(--text-secondary);
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  transition: all 0.15s ease;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
   font-family: inherit;
 }
 
-.header-icon-btn:hover {
+.header-icon-action-btn:hover {
   background: var(--bg-surface-hover);
   color: var(--text-primary);
   border-color: var(--border-medium);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.header-icon-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 

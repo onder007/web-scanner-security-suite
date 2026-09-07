@@ -264,66 +264,83 @@ function App() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Language & Theme Controls */}
-            <div className="header-tools-group">
-              <button 
-                className="header-icon-btn" 
-                onClick={toggleLang}
-                title={lang === 'tr' ? 'Switch to English' : 'Türkçeye Geç'}
-              >
-                {lang === 'tr' ? '🇹🇷 TR' : '🇬🇧 EN'}
-              </button>
-              <button 
-                className="header-icon-btn" 
-                onClick={toggleTheme}
-                title={theme === 'dark' ? t.themeLight : t.themeDark}
-              >
-                {theme === 'dark' ? '☀️' : '🌙'}
-              </button>
-            </div>
+          {/* Center: Main Tab Navigation */}
+          <div className="main-tab-bar">
+            <button
+              id="tab-deadlinks"
+              className={`main-tab ${activeMainTab === 'deadlinks' ? 'active' : ''}`}
+              onClick={() => setActiveMainTab('deadlinks')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              {t.tabBrokenLinks}
+            </button>
+            <button
+              id="tab-security"
+              className={`main-tab ${activeMainTab === 'security' ? 'active-security active' : ''}`}
+              onClick={() => setActiveMainTab('security')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              {t.tabSecurity}
+            </button>
+            <button
+              id="tab-history"
+              className={`main-tab ${activeMainTab === 'history' ? 'active' : ''}`}
+              onClick={() => setActiveMainTab('history')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              {t.tabHistory}
+            </button>
+          </div>
 
-            {/* Main Tab Navigation */}
-            <div className="main-tab-bar">
-              <button
-                id="tab-deadlinks"
-                className={`main-tab ${activeMainTab === 'deadlinks' ? 'active' : ''}`}
-                onClick={() => setActiveMainTab('deadlinks')}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          {/* Far Right: Icon Buttons (Language, Theme, Pro/Admin) */}
+          <div className="header-actions-right">
+            {/* Language Switcher Icon */}
+            <button 
+              className="header-icon-action-btn" 
+              onClick={toggleLang}
+              title={lang === 'tr' ? 'Switch to English' : 'Türkçeye Geç'}
+            >
+              <span className="header-icon-badge">{lang === 'tr' ? 'TR' : 'EN'}</span>
+            </button>
+
+            {/* Theme Switcher Icon */}
+            <button 
+              className="header-icon-action-btn" 
+              onClick={toggleTheme}
+              title={theme === 'dark' ? t.themeLight : t.themeDark}
+            >
+              {theme === 'dark' ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                 </svg>
-                {t.tabBrokenLinks}
-              </button>
-              <button
-                id="tab-security"
-                className={`main-tab ${activeMainTab === 'security' ? 'active-security active' : ''}`}
-                onClick={() => setActiveMainTab('security')}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
-                {t.tabSecurity}
-              </button>
-              <button
-                id="tab-history"
-                className={`main-tab ${activeMainTab === 'history' ? 'active' : ''}`}
-                onClick={() => setActiveMainTab('history')}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-                {t.tabHistory}
-              </button>
-            </div>
+              )}
+            </button>
 
             {/* Pro / Admin Badge Button */}
             <button
               className={`pro-badge-btn ${licenseData?.isPro ? 'pro-badge-active' : ''}`}
               onClick={() => setIsLicenseModalOpen(true)}
-              title={licenseData?.isPro ? 'Lisans Detayları' : 'Lisans Etkinleştir'}
+              title={licenseData?.isPro ? 'Lisans Detayları' : 'Lisans Etkinleştir (onder123)'}
             >
               {licenseData?.isAdmin ? (
                 <>
@@ -337,7 +354,7 @@ function App() {
                 </>
               ) : (
                 <>
-                  <span>💎</span>
+                  <span>🔑</span>
                   <span>{t.getPro}</span>
                 </>
               )}
