@@ -24,14 +24,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 12px;
 }
 
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .header-content h1 {
@@ -604,18 +605,22 @@ tr:hover {
 .pro-badge-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 20px;
+  justify-content: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   cursor: pointer;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.09);
   color: #fcd34d;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .pro-badge-btn:hover {
@@ -805,7 +810,8 @@ tr:hover {
 .header-actions-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .header-icon-action-btn {
@@ -822,6 +828,7 @@ tr:hover {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 0;
   font-family: inherit;
+  flex-shrink: 0;
 }
 
 .header-icon-action-btn:hover {

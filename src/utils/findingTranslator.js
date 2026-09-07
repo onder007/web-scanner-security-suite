@@ -18,6 +18,8 @@ export const CATEGORY_LABELS_TR = {
   'email-security': 'E-posta & DNS Güvenliği',
   'sri': 'Kaynak Bütünlüğü (SRI)',
   'supply-chain': 'Üçüncü Parti / Tedarik Zinciri',
+  'information-disclosure': 'Bilgi İfşası (Information Disclosure)',
+  'waf': 'Güvenlik Duvarı (WAF)'
 };
 
 export const CONFIDENCE_LABELS_TR = {
@@ -88,6 +90,10 @@ const TITLE_MAP_TR = {
   'Potential Open Redirect Risk': 'Olası Açık Yönlendirme (Open Redirect) Riski',
   'Disallowed Paths Disclosed in robots.txt': 'robots.txt Dosyasında Gizli Dizin Yolları İfşa Edildi',
   'Exposed API Key / Secret Token Detected': 'Açıkta Kalan API Anahtarı / Gizli Belirteç Tespit Edildi',
+  'security.txt Found (RFC 9116 Compliant)': 'security.txt Dosyası Bulundu (RFC 9116 Uyumlu)',
+  'No security.txt Found': 'security.txt Dosyası Bulunamadı',
+  'HTTP to HTTPS Redirect Configured': 'HTTP\'den HTTPS\'e Yönlendirme Yapılandırılmış',
+  'HTTP Version Accessible — No Redirect to HTTPS': 'HTTP Sürümü Açıkta — HTTPS\'e Yönlendirme Yok'
 };
 
 // Snippet server title translations
@@ -96,12 +102,17 @@ export const SNIPPET_SERVER_TR = {
   'Next.js (Disable Source Maps)': 'Next.js (Kaynak Haritalarını Kapat)',
   'Vite': 'Vite (Üretim Yapılandırması)',
   'HTML Meta Tag': 'HTML Meta Etiketi',
+  'HTML Meta Etiketi': 'HTML Meta Etiketi',
   'Apache (.htaccess)': 'Apache (.htaccess)',
   'Nginx': 'Nginx',
   'Cloudflare': 'Cloudflare',
   'Next.js': 'Next.js',
   'Caddy': 'Caddy',
-  'Express (Node.js)': 'Express (Node.js)'
+  'Express (Node.js)': 'Express (Node.js)',
+  'Express / Node.js': 'Express / Node.js',
+  'PHP': 'PHP',
+  'HTML': 'HTML',
+  'DNS TXT Record (Zone)': 'DNS TXT Kaydı'
 };
 
 /**
@@ -161,40 +172,78 @@ export function translateEvidence(evidence, lang, finding = {}) {
   if (lang !== 'tr' || !evidence) return evidence;
 
   // Source map
-  if (evidence.includes('A publicly accessible source map was discovered')) {
+  if (evidence.includes('source map was discovered') || evidence.includes('.map')) {
     const urlMatch = evidence.match(/at "(.*?)"/);
     const mapUrl = urlMatch ? urlMatch[1] : finding.url || '';
     return `"${mapUrl}" adresinde herkese açık bir kaynak haritası (.map) tespit edildi. Saldırganlar veya rakipler, minify edilmiş üretim kodlarınızı orijinal yorumlar, dahili API rotaları ve iş mantığı dahil kaynak TypeScript/React kodlarına geri dönüştürebilir.`;
   }
 
   // HSTS
-  if (evidence.includes('Strict-Transport-Security') && (evidence.includes('missing') || evidence.includes('not set'))) {
+  if (evidence.includes('Strict-Transport-Security') || evidence.includes('(HSTS)')) {
     return 'Strict-Transport-Security (HSTS) başlığı yanıtta bulunamadı. Tarayıcılar siteye güvenli olmayan düz HTTP üzerinden de bağlanabilir, bu durum Man-in-the-Middle (Ortadaki Adam) ve SSL şifre çözme saldırılarına imkan tanır.';
   }
 
   // CSP
-  if (evidence.includes('Content-Security-Policy') && (evidence.includes('missing') || evidence.includes('not set'))) {
-    return 'Content-Security-Policy (CSP) başlığı tanımlanmamış. Bu durum sitenizi XSS (Cross-Site Scripting), yetkisiz betik çalıştırma ve veri hırsızlığı saldırılarına karşı korumasız bırakır.';
+  if (evidence.includes('Content-Security-Policy') || evidence.includes('(CSP)')) {
+    return 'Content-Security-Policy (CSP) başlığı yanıtta bulunamadı veya tanımlanmamış. Bu durum sitenizi XSS (Cross-Site Scripting), yetkisiz betik çalıştırma ve veri hırsızlığı saldırılarına karşı korumasız bırakır.';
   }
 
   // X-Frame-Options
-  if (evidence.includes('X-Frame-Options') && (evidence.includes('missing') || evidence.includes('not set'))) {
-    return 'X-Frame-Options başlığı eksik. Sayfa başka siteler tarafından gizli bir iframe içine yerleştirilebilir ve kullanıcıları yanıltıcı tıklamalar yapmaya zorlayan Clickjacking saldırılarına maruz kalabilir.';
+  if (evidence.includes('X-Frame-Options')) {
+    return 'X-Frame-Options başlığı yanıtta bulunamadı. Sayfa başka siteler tarafından gizli bir iframe içine yerleştirilebilir ve kullanıcıları yanıltıcı tıklamalar yapmaya zorlayan Clickjacking saldırılarına maruz kalabilir.';
   }
 
   // X-Content-Type-Options
-  if (evidence.includes('X-Content-Type-Options') && (evidence.includes('missing') || evidence.includes('nosniff'))) {
-    return 'X-Content-Type-Options başlığı eksik veya "nosniff" olarak ayarlanmamış. Tarayıcıların dosya MIME türlerini yanlış yorumlayarak zararlı içerikleri çalıştırmasını engelleyen güvenlik önlemi aktif değil.';
+  if (evidence.includes('X-Content-Type-Options')) {
+    return 'X-Content-Type-Options başlığı yanıtta bulunamadı. Tarayıcıların dosya MIME türlerini yanlış yorumlayarak zararlı içerikleri çalıştırmasını engelleyen "nosniff" koruması aktif değil.';
   }
 
   // Referrer-Policy
-  if (evidence.includes('Referrer-Policy') && (evidence.includes('missing') || evidence.includes('not set'))) {
-    return 'Referrer-Policy başlığı eksik. Kullanıcılar harici bir bağlantıya tıkladığında tam sayfa URL\'si ve hassas GET parametreleri hedef sunuculara referer başlığıyla sızabilir.';
+  if (evidence.includes('Referrer-Policy')) {
+    return 'Referrer-Policy başlığı yanıtta bulunamadı. Kullanıcılar harici bir bağlantıya tıkladığında tam sayfa URL\'si ve hassas GET parametreleri hedef sunuculara referer başlığıyla sızabilir.';
   }
 
   // Permissions-Policy
-  if (evidence.includes('Permissions-Policy') && (evidence.includes('missing') || evidence.includes('not set'))) {
-    return 'Permissions-Policy başlığı eksik. Kamera, mikrofon, coğrafi konum ve ödeme API\'leri gibi hassas tarayıcı yeteneklerinin gömülü iframeler tarafından kullanımı sınırlandırılmamış.';
+  if (evidence.includes('Permissions-Policy')) {
+    return 'Permissions-Policy başlığı yanıtta bulunamadı. Kamera, mikrofon, coğrafi konum ve ödeme API\'leri gibi hassas tarayıcı yeteneklerinin gömülü iframeler tarafından kullanımı sınırlandırılmamış.';
+  }
+
+  // WAF Detection
+  if (evidence.includes('protected by') || evidence.includes('Matched header: server')) {
+    const match = evidence.match(/protected by (.*?)\. Matched header: (.*)/i);
+    const wafName = match ? match[1] : 'Cloudflare / WAF';
+    const hdrName = match ? match[2] : 'server';
+    return `Sitenin ${wafName} Güvenlik Duvarı (WAF) arkasında korunduğu tespit edildi. Eşleşen yanıt başlığı: ${hdrName}.`;
+  }
+
+  // Author meta tag
+  if (evidence.includes('Author meta tag found')) {
+    const match = evidence.match(/Author meta tag found: "(.*?)"/i);
+    const author = match ? match[1] : '';
+    return `Sayfa meta etiketinde geliştirici/yazar bilgisi tespit edildi: "${author}". Bu bilgi saldırganların hedefli keşif yapmasına yardımcı olabilir.`;
+  }
+
+  // robots.txt
+  if (evidence.includes('robots.txt found with')) {
+    const match = evidence.match(/robots\.txt found with (\d+) Disallow rule/i);
+    const count = match ? match[1] : '3';
+    return `robots.txt dosyasında ${count} adet Disallow (engelleme) kuralı tespit edildi. Belirgin bir kritik yönetim dizini ifşası bulunmadı.`;
+  }
+
+  // security.txt
+  if (evidence.includes('security.txt')) {
+    if (evidence.includes('No security.txt file found') || evidence.includes('not found')) {
+      return '/.well-known/security.txt konumunda security.txt dosyası bulunamadı. RFC 9116 standardı, güvenlik araştırmacılarının açıkları güvenle bildirebilmesi için security.txt yayınlanmasını önerir.';
+    }
+    return 'Standart /.well-known/security.txt konumunda geçerli bir security.txt dosyası bulundu. Bu durum sorumlu güvenlik açığı bildirim sürecinin aktif olduğunu gösterir.';
+  }
+
+  // HTTP to HTTPS Redirect
+  if (evidence.includes('The HTTP version of the site redirects to HTTPS')) {
+    return 'Sitenin HTTP sürümü güvenli HTTPS protokolüne yönlendiriliyor. Bu iyi bir güvenlik uygulamasıdır.';
+  }
+  if (evidence.includes('The HTTP version of this site is accessible without redirecting')) {
+    return 'Sitenin HTTP sürümüne HTTPS\'e yönlendirilmeden erişilebiliyor. Düz HTTP üzerinden bağlanan kullanıcılar otomatik olarak korunmaz.';
   }
 
   // POST without CSRF
@@ -208,7 +257,7 @@ export function translateEvidence(evidence, lang, finding = {}) {
   }
 
   // Subresource Integrity (SRI)
-  if (evidence.includes('Subresource Integrity') || evidence.includes('integrity attribute')) {
+  if (evidence.includes('Subresource Integrity') || evidence.includes('integrity attribute') || evidence.includes('harici script')) {
     return 'Sayfada yüklenen harici script veya stil dosyalarında "integrity" (SRI) doğrulaması bulunamadı. İçerik dağıtım ağı (CDN) tehlikeye girerse sitenize zararlı kod enjekte edilebilir.';
   }
 
@@ -242,38 +291,66 @@ export function translateRecommendation(rec, lang) {
   if (lang !== 'tr' || !rec) return rec;
 
   // Source map
-  if (rec.includes('.map files') || rec.includes('productionSourceMap')) {
+  if (rec.includes('.map files') || rec.includes('productionSourceMap') || rec.includes('sourcemap')) {
     return '.map dosyalarını canlı (production) sunuculara yüklemeyin. Derleme yapılandırmanızda (Vite/Next.js/Webpack) "sourcemap: false" veya "productionSourceMap: false" ayarını etkinleştirin ya da Nginx/Cloudflare ters vekil sunucunuzda .map uzantılı dosyalara erişimi 404/403 ile engelleyin.';
   }
 
-  // HSTS
-  if (rec.includes('Strict-Transport-Security') || rec.includes('max-age=31536000')) {
-    return 'Web sunucunuza veya CDN ayarlarınıza "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" başlığını ekleyin.';
-  }
-
   // CSP
-  if (rec.includes('Content-Security-Policy') || rec.includes('CSP')) {
-    return 'Siteniz için sıkı bir İçerik Güvenlik Politikası (CSP) başlığı tanımlayın. Betik ve stillerin yalnızca güvenilir kaynaklardan yüklenmesine izin verin, gereksiz \'unsafe-inline\' ve \'unsafe-eval\' izinlerinden kaçının.';
+  if (rec.includes('Content Security Policy') || rec.includes('Content-Security-Policy') || rec.includes('CSP')) {
+    return 'XSS ve veri enjeksiyonu saldırılarını önlemek için bir İçerik Güvenlik Politikası (CSP) tanımlayın. Sıkı kurallarla başlayın ve yalnızca güvenilir kaynaklara izin verin.';
   }
 
-  // X-Frame-Options
-  if (rec.includes('X-Frame-Options') || rec.includes('DENY') || rec.includes('SAMEORIGIN')) {
-    return 'Web sunucusu başlıklarınıza "X-Frame-Options: SAMEORIGIN" veya "X-Frame-Options: DENY" ekleyin. Modern tarayıcılar için CSP içindeki "frame-ancestors \'self\'" kuralını da yapılandırın.';
+  // HSTS
+  if (rec.includes('Strict-Transport-Security') || rec.includes('max-age=31536000') || rec.includes('HSTS')) {
+    return 'Web sunucunuza veya CDN ayarlarınıza "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" başlığını ekleyin.';
   }
 
   // X-Content-Type-Options
   if (rec.includes('X-Content-Type-Options') || rec.includes('nosniff')) {
-    return 'Tüm HTTP yanıtlarına "X-Content-Type-Options: nosniff" başlığını ekleyin.';
+    return 'MIME türü koklama (sniffing) saldırılarını önlemek için tüm HTTP yanıtlarına "X-Content-Type-Options: nosniff" başlığını ekleyin.';
+  }
+
+  // X-Frame-Options
+  if (rec.includes('X-Frame-Options') || rec.includes('clickjacking') || rec.includes('SAMEORIGIN') || rec.includes('DENY')) {
+    return 'Clickjacking saldırılarını önlemek için web sunucusu başlıklarınıza "X-Frame-Options: SAMEORIGIN" veya "X-Frame-Options: DENY" ekleyin. CSP içinde "frame-ancestors \'self\'" kuralını da yapılandırın.';
   }
 
   // Referrer-Policy
-  if (rec.includes('Referrer-Policy') || rec.includes('strict-origin-when-cross-origin')) {
-    return 'Gizlilik ve güvenliği korumak için "Referrer-Policy: strict-origin-when-cross-origin" veya "no-referrer" başlığını tanımlayın.';
+  if (rec.includes('Referrer-Policy') || rec.includes('referrer')) {
+    return 'İsteklerde hangi referrer bilgilerinin gönderileceğini kontrol etmek ve veri sızıntılarını önlemek için "Referrer-Policy: strict-origin-when-cross-origin" veya "no-referrer" başlığını tanımlayın.';
   }
 
   // Permissions-Policy
-  if (rec.includes('Permissions-Policy')) {
-    return 'Web sunucusu başlıklarınıza "Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()" gibi kısıtlayıcı bir izin politikası ekleyin.';
+  if (rec.includes('Permissions-Policy') || rec.includes('geolocation=')) {
+    return 'Kamera, mikrofon ve konum gibi hassas tarayıcı özelliklerini kısıtlamak için "Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()" başlığını ekleyin.';
+  }
+
+  // WAF blocking mode
+  if (rec.includes('blocking mode') || (rec.includes('WAF') && rec.includes('monitoring'))) {
+    return 'Web Uygulama Güvenlik Duvarı (WAF) kurallarının yalnızca izleme (monitoring) modunda değil, zararlı istekleri engelleyen aktif engelleme (blocking) modunda çalıştığından emin olun.';
+  }
+
+  // Author meta tag
+  if (rec.includes('author meta tag') || rec.includes('removing the author')) {
+    return 'Kişisel bilgi ifşasını ve saldırganların hedef odaklı keşif yapmasını önlemek için halka açık sayfalardan author meta etiketini kaldırmayı değerlendirin.';
+  }
+
+  // robots.txt
+  if (rec.includes('Review robots.txt') || rec.includes('robots.txt periodically')) {
+    return 'robots.txt dosyasını hassas yönetim veya geliştirme yollarını istemeden açığa çıkarmadığından emin olmak için periyodik olarak inceleyin.';
+  }
+
+  // security.txt
+  if (rec.includes('security.txt') || rec.includes('securitytxt.org')) {
+    return 'Güvenlik açıklarının sorumlu bir şekilde bildirilmesini sağlamak için /.well-known/security.txt konumunda iletişim bilgilerinizi içeren bir security.txt dosyası oluşturun (Bkz: https://securitytxt.org).';
+  }
+
+  // HTTP to HTTPS Redirect
+  if (rec.includes('Ensure the redirect is a 301') || (rec.includes('301') && rec.includes('permanent'))) {
+    return 'HTTP\'den HTTPS\'e yönlendirmenin kalıcı bir 301 yönlendirmesi olduğundan ve HSTS başlığının yapılandırıldığından emin olun.';
+  }
+  if (rec.includes('Configure a permanent 301 redirect')) {
+    return 'Web sunucusu düzeyinde HTTP\'den HTTPS\'e kalıcı 301 yönlendirmesi tanımlayın ve HSTS başlığını ekleyin.';
   }
 
   // CSRF

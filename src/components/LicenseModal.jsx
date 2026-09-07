@@ -176,7 +176,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
               <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(59, 130, 246, 0.05)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.15)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    Özel Admin Anahtarı:
+                    {lang === 'tr' ? 'Özel Yönetici (Admin) Anahtarı:' : 'Master Admin Test Key:'}
                   </span>
                   <button
                     type="button"
@@ -186,11 +186,13 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
                       cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', fontWeight: 600
                     }}
                   >
-                    onder123 Anahtarını Uygula
+                    {lang === 'tr' ? 'onder123 Anahtarını Uygula' : 'Apply onder123 Key'}
                   </button>
                 </div>
                 <span style={{ fontSize: '0.67rem', color: 'var(--text-muted)' }}>
-                  (Kendi uzantında onder123 yazarak tüm Pro özelliklerini anında açabilirsin)
+                  {lang === 'tr'
+                    ? '(Kendi uzantında onder123 yazarak tüm Pro & Admin özelliklerini anında açabilirsin)'
+                    : '(Enter onder123 to unlock all Pro and Admin features immediately)'}
                 </span>
               </div>
             </>
@@ -209,13 +211,13 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
           )}
         </div>
 
-        {/* Footer info */}
+        {/* Footer info & About */}
         <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-            Çevrimdışı ve Güvenli Doğrulama
+            {lang === 'tr' ? 'Web Scanner v1.1 — Çevrimdışı Güvenli Doğrulama' : 'Web Scanner v1.1 — Offline Local Validation'}
           </span>
           <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-            0 Veritabanı, 0 Takipçi
+            {lang === 'tr' ? '0 Veritabanı, 0 Takipçi, %100 Pasif & Güvenli' : '0 Database, 0 Tracking, 100% Passive & Safe'}
           </span>
         </div>
       </div>

@@ -111,7 +111,7 @@ const FindingCard = ({ finding, lang = 'tr' }) => {
           {/* Parameter */}
           {finding.parameter && (
             <div className="sec-finding-row">
-              <span className="sec-field-label">{isTr ? 'Parametre' : 'Parameter'}</span>
+              <span className="sec-field-label">{isTr ? 'Parametre:' : 'Parameter:'}</span>
               <code className="sec-code">{finding.parameter}</code>
             </div>
           )}
@@ -119,7 +119,7 @@ const FindingCard = ({ finding, lang = 'tr' }) => {
           {/* Method */}
           {finding.method && (
             <div className="sec-finding-row">
-              <span className="sec-field-label">{isTr ? 'Metot' : 'Method'}</span>
+              <span className="sec-field-label">{isTr ? 'Metot:' : 'Method:'}</span>
               <code className="sec-code">{finding.method}</code>
             </div>
           )}
@@ -127,7 +127,7 @@ const FindingCard = ({ finding, lang = 'tr' }) => {
           {/* Header */}
           {finding.header && (
             <div className="sec-finding-row">
-              <span className="sec-field-label">{isTr ? 'Başlık' : 'Header'}</span>
+              <span className="sec-field-label">{isTr ? 'Başlık:' : 'Header:'}</span>
               <code className="sec-code">{finding.header}</code>
             </div>
           )}
@@ -135,14 +135,14 @@ const FindingCard = ({ finding, lang = 'tr' }) => {
           {/* Cookie Name */}
           {finding.cookieName && (
             <div className="sec-finding-row">
-              <span className="sec-field-label">{isTr ? 'Çerez' : 'Cookie'}</span>
+              <span className="sec-field-label">{isTr ? 'Çerez:' : 'Cookie:'}</span>
               <code className="sec-code">{finding.cookieName}</code>
             </div>
           )}
 
           {/* Confidence */}
           <div className="sec-finding-row">
-            <span className="sec-field-label">{isTr ? 'Güvenilirlik' : 'Confidence'}</span>
+            <span className="sec-field-label">{isTr ? 'Güvenilirlik:' : 'Confidence:'}</span>
             <span style={{ color: confCfg.color, fontWeight: 600 }}>{displayConfidence}</span>
           </div>
 

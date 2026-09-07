@@ -300,7 +300,7 @@ function App() {
             </button>
           </div>
 
-          {/* Far Right: Icon Buttons (Language, Theme, Pro/Admin) */}
+          {/* Far Right: Actions (Language, Theme, About, License & Pricing) */}
           <div className="header-actions-right">
             {/* Language Switcher Icon */}
             <button 
@@ -336,25 +336,38 @@ function App() {
               )}
             </button>
 
+            {/* About / Info & Pricing Icon Button */}
+            <button
+              className="header-icon-action-btn"
+              onClick={() => setIsLicenseModalOpen(true)}
+              title={lang === 'tr' ? 'Hakkında, Lisans & Fiyatlandırma' : 'About, License & Pricing'}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </button>
+
             {/* Pro / Admin Badge Button */}
             <button
               className={`pro-badge-btn ${licenseData?.isPro ? 'pro-badge-active' : ''}`}
               onClick={() => setIsLicenseModalOpen(true)}
-              title={licenseData?.isPro ? 'Lisans Detayları' : 'Lisans Etkinleştir (onder123)'}
+              title={licenseData?.isPro ? (lang === 'tr' ? 'Lisans Detayları' : 'License Details') : (lang === 'tr' ? 'Lisans & Fiyatlandırma ($14 Ömür Boyu)' : 'License & Pricing ($14 Lifetime)')}
             >
               {licenseData?.isAdmin ? (
                 <>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                   </svg>
-                  <span>{t.adminBadge}</span>
+                  <span>ADMIN</span>
                 </>
               ) : licenseData?.isPro ? (
                 <>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 3h12l4 6-10 13L2 9z"/>
                   </svg>
-                  <span>{t.proBadgeActive}</span>
+                  <span>PRO</span>
                 </>
               ) : (
                 <>
@@ -363,7 +376,7 @@ function App() {
                     <path d="m21 2-9.6 9.6"/>
                     <path d="m15.5 7.5 3 3L21 8"/>
                   </svg>
-                  <span>{t.getPro}</span>
+                  <span>PRO • $14</span>
                 </>
               )}
             </button>
