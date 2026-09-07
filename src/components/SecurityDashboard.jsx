@@ -286,7 +286,14 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
                 {compliance.letterGrade.grade}
               </span>
               <span style={{ fontSize: '0.625rem', fontWeight: 600, color: compliance.letterGrade.color, marginTop: '4px', textAlign: 'center' }}>
-                {compliance.letterGrade.label}
+                {lang === 'tr' ? ({
+                  'Critical Risk Detected': 'Kritik Risk Tespit Edildi',
+                  'High Exposure': 'Yüksek Güvenlik Riski',
+                  'Needs Immediate Hardening': 'Acil Güçlendirme Gerekli',
+                  'Good, Minor Hardening Needed': 'İyi, Küçük İyileştirmeler Gerekli',
+                  'Strong Security Baseline': 'Güçlü Güvenlik Seviyesi',
+                  'Exceptional Security': 'Mükemmel Güvenlik Seviyesi'
+                }[compliance.letterGrade.label] || compliance.letterGrade.label) : compliance.letterGrade.label}
               </span>
               <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {lang === 'tr' ? 'Güvenlik Notu' : 'Security Grade'}
@@ -412,11 +419,13 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
           </div>
 
           {/* Compliance & Regulatory Readiness */}
-          <ComplianceCard compliance={compliance} />
+          <ComplianceCard compliance={compliance} lang={lang} />
 
           {isCompleted && (
             <p style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-              Automated assessment only. Results do not confirm vulnerabilities and require manual verification.
+              {lang === 'tr'
+                ? 'Yalnızca otomatik değerlendirmedir. Sonuçlar kesin güvenlik açığı teşkil etmez ve uzman geliştirici doğrulaması gerektirir.'
+                : 'Automated assessment only. Results do not confirm vulnerabilities and require manual verification.'}
             </p>
           )}
         </div>

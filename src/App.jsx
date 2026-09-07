@@ -181,7 +181,7 @@ function App() {
 
   // ── Dead Link Scanner Handlers (unchanged) ─────────────────────────────────
   const handleStart = () => {
-    if (!url) return alert('Please enter a valid URL');
+    if (!url) return alert(t.pleaseEnterUrl);
     if (chrome?.runtime) {
       const parsedOptions = { ...options, excludeFolders: options.excludeFolders.split(',').map(s => s.trim()).filter(Boolean) };
       chrome.runtime.sendMessage({ action: 'start_scan', url, options: parsedOptions });
@@ -210,7 +210,7 @@ function App() {
 
     let target = (manualUrl || currentTabUrl || '').trim();
     if (!target) {
-      alert('Please enter a website URL to scan.');
+      alert(t.pleaseEnterUrl);
       return;
     }
     if (!target.startsWith('http://') && !target.startsWith('https://')) {
@@ -218,7 +218,7 @@ function App() {
     }
 
     // Reset logs so user sees fresh output immediately
-    setSecLogs([{ message: `Initiating security scan for ${target}...`, type: 'info', timestamp: new Date().toISOString() }]);
+    setSecLogs([{ message: lang === 'tr' ? `${target} için güvenlik denetimi başlatılıyor...` : `Initiating security scan for ${target}...`, type: 'info', timestamp: new Date().toISOString() }]);
     setSecStatus('running');
 
     if (chrome?.tabs) {

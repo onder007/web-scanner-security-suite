@@ -1,9 +1,18 @@
 // src/components/SecurityFindings.jsx
 // Security findings inspector featuring live search, severity filters,
-// and actionable 1-click remediation code snippets.
+// and actionable 1-click remediation code snippets with full Turkish localization.
 
 import React, { useState, useMemo } from 'react';
 import { getFixSnippets } from '../security/fixSnippetsEngine.js';
+import {
+  CATEGORY_LABELS_TR,
+  CONFIDENCE_LABELS_TR,
+  SEVERITY_LABELS_TR,
+  SNIPPET_SERVER_TR,
+  translateTitle,
+  translateEvidence,
+  translateRecommendation
+} from '../utils/findingTranslator.js';
 
 const SEVERITY_CONFIG = {
   critical: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.3)', label: 'CRITICAL' },
@@ -33,14 +42,22 @@ const CONFIDENCE_LABELS = {
 };
 
 // ── Finding Card with 1-Click Fix Snippets ────────────────────────────────────
-const FindingCard = ({ finding }) => {
+const FindingCard = ({ finding, lang = 'tr' }) => {
   const [expanded, setExpanded] = useState(false);
   const [activeServerIdx, setActiveServerIdx] = useState(0);
   const [copied, setCopied] = useState(false);
 
+  const isTr = lang === 'tr';
   const cfg = SEVERITY_CONFIG[finding.severity] || SEVERITY_CONFIG.info;
   const confCfg = CONFIDENCE_LABELS[finding.confidence] || CONFIDENCE_LABELS.low;
   const snippets = useMemo(() => getFixSnippets(finding), [finding]);
+
+  const displayTitle = translateTitle(finding.title, lang);
+  const displayEvidence = translateEvidence(finding.evidence, lang, finding);
+  const displayRec = translateRecommendation(finding.recommendation, lang);
+  const displayCategory = isTr ? (CATEGORY_LABELS_TR[finding.category] || finding.category) : (CATEGORY_LABELS[finding.category] || finding.category);
+  const displayConfidence = isTr ? (CONFIDENCE_LABELS_TR[finding.confidence] || confCfg.label) : confCfg.label;
+  const severityBadgeLabel = isTr ? (SEVERITY_LABELS_TR[finding.severity] || cfg.label) : cfg.label;
 
   let displayUrl = finding.url;
   try { displayUrl = new URL(finding.url).pathname + new URL(finding.url).search; } catch {}
@@ -66,12 +83,12 @@ const FindingCard = ({ finding }) => {
       >
         <div className="sec-finding-title-row">
           <span className="sec-severity-badge" style={{ color: cfg.color, background: cfg.border }}>
-            {cfg.label}
+            {severityBadgeLabel}
           </span>
-          <span className="sec-finding-title">{finding.title}</span>
+          <span className="sec-finding-title">{displayTitle}</span>
         </div>
         <div className="sec-finding-meta">
-          <span className="sec-cat-badge">{CATEGORY_LABELS[finding.category] || finding.category}</span>
+          <span className="sec-cat-badge">{displayCategory}</span>
           <svg
             className={`sec-chevron ${expanded ? 'sec-chevron-up' : ''}`}
             width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -94,7 +111,7 @@ const FindingCard = ({ finding }) => {
           {/* Parameter */}
           {finding.parameter && (
             <div className="sec-finding-row">
-              <span className="sec-field-label">Parameter</span>
+              <span className="sec-field-label">{isTr ? 'Parametre' : 'Parameter'}</span>
               <code className="sec-code">{finding.parameter}</code>
             </div>
           )}
@@ -102,7 +119,7 @@ const FindingCard = ({ finding }) => {
           {/* Method */}
           {finding.method && (
             <div className="sec-finding-row">
-              <span className="sec-field-label">Method</span>
+              <span className="sec-field-label">{isTr ? 'Metot' : 'Method'}</span>
               <code className="sec-code">{finding.method}</code>
             </div>
           )}
@@ -110,7 +127,7 @@ const FindingCard = ({ finding }) => {
           {/* Header */}
           {finding.header && (
             <div className="sec-finding-row">
-              <span className="sec-field-label">Header</span>
+              <span className="sec-field-label">{isTr ? 'Başlık' : 'Header'}</span>
               <code className="sec-code">{finding.header}</code>
             </div>
           )}
@@ -118,30 +135,30 @@ const FindingCard = ({ finding }) => {
           {/* Cookie Name */}
           {finding.cookieName && (
             <div className="sec-finding-row">
-              <span className="sec-field-label">Cookie</span>
+              <span className="sec-field-label">{isTr ? 'Çerez' : 'Cookie'}</span>
               <code className="sec-code">{finding.cookieName}</code>
             </div>
           )}
 
           {/* Confidence */}
           <div className="sec-finding-row">
-            <span className="sec-field-label">Confidence</span>
-            <span style={{ color: confCfg.color, fontWeight: 600 }}>{confCfg.label}</span>
+            <span className="sec-field-label">{isTr ? 'Güvenilirlik' : 'Confidence'}</span>
+            <span style={{ color: confCfg.color, fontWeight: 600 }}>{displayConfidence}</span>
           </div>
 
           {/* Evidence */}
           {finding.evidence && (
             <div className="sec-finding-section">
-              <span className="sec-field-label">Evidence</span>
-              <p className="sec-field-text">{finding.evidence}</p>
+              <span className="sec-field-label">{isTr ? 'Kanıt / Açıklama' : 'Evidence'}</span>
+              <p className="sec-field-text">{displayEvidence}</p>
             </div>
           )}
 
           {/* Recommendation */}
           {finding.recommendation && (
             <div className="sec-finding-section">
-              <span className="sec-field-label">Recommendation</span>
-              <p className="sec-field-text">{finding.recommendation}</p>
+              <span className="sec-field-label">{isTr ? 'Çözüm Önerisi' : 'Recommendation'}</span>
+              <p className="sec-field-text">{displayRec}</p>
             </div>
           )}
 
@@ -156,7 +173,8 @@ const FindingCard = ({ finding }) => {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> 1-Click Remediation Snippets
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                  {isTr ? '1-Tıkla Düzeltme Kodları' : '1-Click Remediation Snippets'}
                 </span>
                 <button 
                   className="btn btn-outline" 
@@ -175,12 +193,12 @@ const FindingCard = ({ finding }) => {
                   {copied ? (
                     <>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                      Copied!
+                      {isTr ? 'Kopyalandı!' : 'Copied!'}
                     </>
                   ) : (
                     <>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                      Copy Code
+                      {isTr ? 'Kodu Kopyala' : 'Copy Code'}
                     </>
                   )}
                 </button>
@@ -203,14 +221,14 @@ const FindingCard = ({ finding }) => {
                       fontWeight: activeServerIdx === idx ? 600 : 400
                     }}
                   >
-                    {snip.server}
+                    {isTr ? (SNIPPET_SERVER_TR[snip.server] || snip.server) : snip.server}
                   </button>
                 ))}
               </div>
 
               {snippets[activeServerIdx]?.path && (
                 <div style={{ fontSize: '0.68rem', color: '#64748b', marginBottom: '6px' }}>
-                  Target: <code style={{ color: '#94a3b8' }}>{snippets[activeServerIdx].path}</code>
+                  {isTr ? 'Hedef Dosya: ' : 'Target: '}<code style={{ color: '#94a3b8' }}>{snippets[activeServerIdx].path}</code>
                 </div>
               )}
 
@@ -233,7 +251,7 @@ const FindingCard = ({ finding }) => {
 
           <p className="sec-disclaimer-small" style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Manual verification required. This is not a confirmed vulnerability.
+            {isTr ? 'Manuel doğrulama gereklidir. Bu kesin bir güvenlik açığı değildir.' : 'Manual verification required. This is not a confirmed vulnerability.'}
           </p>
         </div>
       )}
@@ -251,8 +269,11 @@ const SecurityFindings = ({
   targetUrl = '',
   onToggleNetworkLogging,
   onClearNetwork,
-  isRunning
+  isRunning,
+  lang = 'tr',
+  t
 }) => {
+  const isTr = lang === 'tr';
   const [severityFilter, setSeverityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priorityTab, setPriorityTab] = useState('all'); // 'all' | 'urgent' | 'medium' | 'low_info'
@@ -284,10 +305,13 @@ const SecurityFindings = ({
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchTitle = (f.title || '').toLowerCase().includes(q);
+        const trTitle = translateTitle(f.title, 'tr').toLowerCase();
+        const trEv = translateEvidence(f.evidence, 'tr', f).toLowerCase();
+        const trRec = translateRecommendation(f.recommendation, 'tr').toLowerCase();
+        const matchTitle = (f.title || '').toLowerCase().includes(q) || trTitle.includes(q);
         const matchCat = (f.category || '').toLowerCase().includes(q);
-        const matchEv = (f.evidence || '').toLowerCase().includes(q);
-        const matchRec = (f.recommendation || '').toLowerCase().includes(q);
+        const matchEv = (f.evidence || '').toLowerCase().includes(q) || trEv.includes(q);
+        const matchRec = (f.recommendation || '').toLowerCase().includes(q) || trRec.includes(q);
         const matchUrl = (f.url || '').toLowerCase().includes(q);
         if (!matchTitle && !matchCat && !matchEv && !matchRec && !matchUrl) return false;
       }
@@ -318,15 +342,15 @@ const SecurityFindings = ({
     if (findings.length === 0) return;
     const exportData = filteredFindings.map(f => ({
       category: f.category,
-      title: f.title,
+      title: isTr ? translateTitle(f.title, 'tr') : f.title,
       severity: f.severity,
       confidence: f.confidence,
       url: f.url,
       parameter: f.parameter,
       header: f.header,
       cookieName: f.cookieName,
-      evidence: f.evidence,
-      recommendation: f.recommendation,
+      evidence: isTr ? translateEvidence(f.evidence, 'tr', f) : f.evidence,
+      recommendation: isTr ? translateRecommendation(f.recommendation, 'tr') : f.recommendation,
     }));
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportData, null, 2));
     const link = document.createElement('a');
@@ -339,11 +363,20 @@ const SecurityFindings = ({
 
   const exportCSV = () => {
     if (findings.length === 0) return;
-    const headers = ['Category', 'Title', 'Severity', 'Confidence', 'URL', 'Parameter', 'Header', 'Cookie', 'Evidence', 'Recommendation'];
+    const headers = isTr
+      ? ['Kategori', 'Başlık', 'Önem Derecesi', 'Güvenilirlik', 'URL', 'Parametre', 'Başlık', 'Çerez', 'Kanıt', 'Çözüm Önerisi']
+      : ['Category', 'Title', 'Severity', 'Confidence', 'URL', 'Parameter', 'Header', 'Cookie', 'Evidence', 'Recommendation'];
     const rows = filteredFindings.map(f => [
-      f.category, f.title, f.severity, f.confidence,
-      f.url, f.parameter || '', f.header || '', f.cookieName || '',
-      f.evidence, f.recommendation,
+      isTr ? (CATEGORY_LABELS_TR[f.category] || f.category) : f.category,
+      isTr ? translateTitle(f.title, 'tr') : f.title,
+      f.severity,
+      f.confidence,
+      f.url,
+      f.parameter || '',
+      f.header || '',
+      f.cookieName || '',
+      isTr ? translateEvidence(f.evidence, 'tr', f) : f.evidence,
+      isTr ? translateRecommendation(f.recommendation, 'tr') : f.recommendation,
     ]);
     const csvContent = 'data:text/csv;charset=utf-8,'
       + headers.join(',') + '\n'
@@ -360,6 +393,10 @@ const SecurityFindings = ({
   const mediumCount = findings.filter(f => f.severity === 'medium').length;
   const lowCount = findings.filter(f => f.severity === 'low' || f.severity === 'info').length;
 
+  const uniqueCategories = useMemo(() => {
+    return Array.from(new Set(findings.map(f => f.category))).filter(Boolean);
+  }, [findings]);
+
   return (
     <div className="glass-panel animate-slide-up" style={{ animationDelay: '0.1s' }}>
       {/* Subtab Navigation */}
@@ -373,7 +410,7 @@ const SecurityFindings = ({
             <line x1="12" y1="8" x2="12" y2="12"/>
             <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          Findings ({findings.length})
+          {isTr ? 'Bulgular' : 'Findings'} ({findings.length})
         </button>
         <button
           className={`sec-subtab ${activeTab === 'network' ? 'active' : ''}`}
@@ -385,7 +422,7 @@ const SecurityFindings = ({
             <line x1="6" y1="6" x2="6.01" y2="6"/>
             <line x1="6" y1="18" x2="6.01" y2="18"/>
           </svg>
-          Network Inspector ({networkLogs.length})
+          {isTr ? 'Ağ Analizörü' : 'Network Inspector'} ({networkLogs.length})
         </button>
         <button
           className={`sec-subtab ${activeTab === 'logs' ? 'active' : ''}`}
@@ -395,7 +432,7 @@ const SecurityFindings = ({
             <polyline points="4 17 10 11 4 5"/>
             <line x1="12" y1="19" x2="20" y2="19"/>
           </svg>
-          Scan Logs
+          {isTr ? 'Tarama Günlükleri' : 'Scan Logs'}
         </button>
       </div>
 
@@ -409,7 +446,7 @@ const SecurityFindings = ({
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="Filter findings by title, evidence, parameter, or URL..."
+                  placeholder={isTr ? "Bulguları başlık, kanıt, parametre veya URL'ye göre filtrele..." : "Filter findings by title, evidence, parameter, or URL..."}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   style={{ flex: 1, padding: '7px 12px', fontSize: '0.8125rem' }}
@@ -420,7 +457,7 @@ const SecurityFindings = ({
                     style={{ padding: '4px 10px', fontSize: '0.78rem' }}
                     onClick={() => setSearchQuery('')}
                   >
-                    Clear
+                    {isTr ? 'Temizle' : 'Clear'}
                   </button>
                 )}
               </div>
@@ -428,10 +465,10 @@ const SecurityFindings = ({
               {/* Actionable Risk Priority Pills */}
               <div style={{ display: 'flex', gap: '5px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '2px' }}>
                 {[
-                  { id: 'all', label: 'All', count: findings.length },
-                  { id: 'urgent', label: 'Urgent', count: urgentCount, color: '#ef4444' },
-                  { id: 'medium', label: 'Medium', count: mediumCount, color: '#f59e0b' },
-                  { id: 'low_info', label: 'Low & Info', count: lowCount, color: '#3b82f6' },
+                  { id: 'all', label: isTr ? 'Tümü' : 'All', count: findings.length },
+                  { id: 'urgent', label: isTr ? 'Acil' : 'Urgent', count: urgentCount, color: '#ef4444' },
+                  { id: 'medium', label: isTr ? 'Orta' : 'Medium', count: mediumCount, color: '#f59e0b' },
+                  { id: 'low_info', label: isTr ? 'Düşük & Bilgi' : 'Low & Info', count: lowCount, color: '#3b82f6' },
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -475,12 +512,12 @@ const SecurityFindings = ({
                   onChange={e => setSeverityFilter(e.target.value)}
                   id="sec-severity-filter"
                 >
-                  <option value="all">All Severities</option>
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                  <option value="info">Info</option>
+                  <option value="all">{isTr ? 'Tüm Önem Dereceleri' : 'All Severities'}</option>
+                  <option value="critical">{isTr ? 'Kritik' : 'Critical'}</option>
+                  <option value="high">{isTr ? 'Yüksek' : 'High'}</option>
+                  <option value="medium">{isTr ? 'Orta' : 'Medium'}</option>
+                  <option value="low">{isTr ? 'Düşük' : 'Low'}</option>
+                  <option value="info">{isTr ? 'Bilgi' : 'Info'}</option>
                 </select>
 
                 <select
@@ -490,34 +527,36 @@ const SecurityFindings = ({
                   onChange={e => setCategoryFilter(e.target.value)}
                   id="sec-category-filter"
                 >
-                  <option value="all">All Categories</option>
-                  {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
+                  <option value="all">{isTr ? 'Tüm Kategoriler' : 'All Categories'}</option>
+                  {uniqueCategories.map(cat => (
+                    <option key={cat} value={cat}>
+                      {isTr ? (CATEGORY_LABELS_TR[cat] || cat) : (CATEGORY_LABELS[cat] || cat)}
+                    </option>
                   ))}
                 </select>
 
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
-                  <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: '0.78rem' }} onClick={exportJSON} id="sec-export-json">
-                    JSON
+                  <button className="btn btn-outline" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={exportJSON}>
+                    {isTr ? 'JSON İndir' : 'Export JSON'}
                   </button>
-                  <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: '0.78rem' }} onClick={exportCSV} id="sec-export-csv">
-                    CSV
+                  <button className="btn btn-outline" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={exportCSV}>
+                    {isTr ? 'CSV İndir' : 'Export CSV'}
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Finding list */}
+          {/* Finding Cards */}
           <div className="sec-findings-list">
             {filteredFindings.length === 0 ? (
               <div className="sec-empty-findings">
                 {findings.length === 0
-                  ? 'No findings yet. Run a security scan first.'
-                  : 'No findings match the selected filters or search query.'}
+                  ? (isTr ? 'Henüz bulgu yok. Önce bir güvenlik taraması başlatın.' : 'No findings yet. Run a security scan first.')
+                  : (isTr ? 'Seçilen filtreler veya arama kriteriyle eşleşen bulgu bulunamadı.' : 'No findings match the selected filters or search query.')}
               </div>
             ) : (
-              filteredFindings.map(f => <FindingCard key={f.id} finding={f} />)
+              filteredFindings.map(f => <FindingCard key={f.id} finding={f} lang={lang} />)
             )}
           </div>
         </>
@@ -548,16 +587,20 @@ const SecurityFindings = ({
                   display: 'inline-block'
                 }} />
                 <span style={{ color: isNetworkLoggingEnabled ? '#a7f3d0' : '#fca5a5', fontWeight: 600 }}>
-                  {isNetworkLoggingEnabled ? 'Live Target Traffic Recording Active' : 'Target Traffic Recording Paused'}
+                  {isNetworkLoggingEnabled 
+                    ? (isTr ? 'Canlı Hedef Trafik Kaydı Aktif' : 'Live Target Traffic Recording Active')
+                    : (isTr ? 'Hedef Trafik Kaydı Duraklatıldı' : 'Target Traffic Recording Paused')}
                 </span>
               </div>
               <div style={{ color: '#94a3b8', fontSize: '0.73rem', paddingLeft: '16px', display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                <strong>Isolated Scope:</strong>{' '}
+                <strong>{isTr ? 'Yalıtılmış Kapsam:' : 'Isolated Scope:'}</strong>{' '}
                 <span style={{ color: '#38bdf8' }}>
-                  {networkTargetHost || (targetUrl ? (() => { try { return new URL(targetUrl).hostname; } catch { return targetUrl; } })() : 'Active Scanned Host')}
+                  {networkTargetHost || (targetUrl ? (() => { try { return new URL(targetUrl).hostname; } catch { return targetUrl; } })() : (isTr ? 'Aktif Taranan Host' : 'Active Scanned Host'))}
                 </span>{' '}
-                <span style={{ color: '#64748b' }}>(YouTube and unrelated tabs are strictly excluded)</span>
+                <span style={{ color: '#64748b' }}>
+                  {isTr ? '(YouTube ve alakasız sekmeler kesinlikle hariç tutulur)' : '(YouTube and unrelated tabs are strictly excluded)'}
+                </span>
               </div>
             </div>
 
@@ -583,12 +626,12 @@ const SecurityFindings = ({
                 {isNetworkLoggingEnabled ? (
                   <>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-                    Stop Recording
+                    {isTr ? 'Kaydı Durdur' : 'Stop Recording'}
                   </>
                 ) : (
                   <>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    Start Recording
+                    {isTr ? 'Kaydı Başlat' : 'Start Recording'}
                   </>
                 )}
               </button>
@@ -600,7 +643,7 @@ const SecurityFindings = ({
             <input
               type="text"
               className="input-field"
-              placeholder="Filter network requests by URL, path or method..."
+              placeholder={isTr ? "Ağ isteklerini URL, yol veya metoda göre filtrele..." : "Filter network requests by URL, path or method..."}
               value={netSearch}
               onChange={e => setNetSearch(e.target.value)}
               style={{ flex: 1, minWidth: '180px', padding: '6px 10px', fontSize: '0.8rem' }}
@@ -611,21 +654,21 @@ const SecurityFindings = ({
               value={netTypeFilter}
               onChange={e => setNetTypeFilter(e.target.value)}
             >
-              <option value="all">All Types</option>
+              <option value="all">{isTr ? 'Tüm İstekler' : 'All Types'}</option>
               <option value="xhr">Fetch / XHR</option>
-              <option value="script">Scripts (JS)</option>
-              <option value="stylesheet">Stylesheets (CSS)</option>
-              <option value="image">Images</option>
+              <option value="script">{isTr ? 'Betikler (JS)' : 'Scripts (JS)'}</option>
+              <option value="stylesheet">{isTr ? 'Stiller (CSS)' : 'Stylesheets (CSS)'}</option>
+              <option value="image">{isTr ? 'Görseller' : 'Images'}</option>
             </select>
             {onClearNetwork && (
               <button
                 className="btn btn-outline"
                 style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '5px' }}
                 onClick={onClearNetwork}
-                title="Clear network logs"
+                title={isTr ? "Ağ günlüklerini temizle" : "Clear network logs"}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                Clear
+                {isTr ? 'Temizle' : 'Clear'}
               </button>
             )}
           </div>
@@ -641,11 +684,11 @@ const SecurityFindings = ({
             {filteredNetworkLogs.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
                 {networkLogs.length === 0
-                  ? 'No network traffic captured yet. Browse the page to observe live requests.'
-                  : 'No requests match the filter.'}
+                  ? (isTr ? 'Henüz ağ trafiği yakalanmadı. İstekleri görmek için sayfada gezinin.' : 'No network traffic captured yet. Browse the page to observe live requests.')
+                  : (isTr ? 'Filtreyle eşleşen istek bulunamadı.' : 'No requests match the filter.')}
               </div>
             ) : (
-              filteredNetworkLogs.map(req => <NetworkRequestRow key={req.id} req={req} />)
+              filteredNetworkLogs.map(req => <NetworkRequestRow key={req.id} req={req} lang={lang} />)
             )}
           </div>
         </div>
@@ -655,7 +698,9 @@ const SecurityFindings = ({
       {activeTab === 'logs' && (
         <div ref={logsRef} className="logs-container" style={{ marginTop: '12px', maxHeight: '150px' }}>
           {logs.length === 0 ? (
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No log messages yet.</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              {isTr ? 'Henüz tarama günlüğü kaydı yok.' : 'No log messages yet.'}
+            </div>
           ) : (
             logs.map((l, i) => (
               <div key={i} className={`log-entry log-${l.type || 'info'}`}>
@@ -671,8 +716,9 @@ const SecurityFindings = ({
 };
 
 // ── Network Request Row Component ─────────────────────────────────────────────
-const NetworkRequestRow = ({ req }) => {
+const NetworkRequestRow = ({ req, lang = 'tr' }) => {
   const [expanded, setExpanded] = useState(false);
+  const isTr = lang === 'tr';
 
   let pathname = req.url;
   let host = '';
@@ -752,22 +798,22 @@ const NetworkRequestRow = ({ req }) => {
       {expanded && (
         <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.4)', borderRadius: '6px', fontSize: '0.72rem' }}>
           <div style={{ marginBottom: '6px', wordBreak: 'break-all' }}>
-            <strong style={{ color: '#94a3b8' }}>Full URL: </strong>
+            <strong style={{ color: '#94a3b8' }}>{isTr ? 'Tam URL: ' : 'Full URL: '}</strong>
             <a href={req.url} target="_blank" rel="noreferrer" style={{ color: '#38bdf8' }}>{req.url}</a>
           </div>
           {req.ip && (
             <div style={{ marginBottom: '6px', color: '#94a3b8' }}>
-              <strong>Server IP: </strong>{req.ip} {req.fromCache ? '(from cache)' : ''}
+              <strong>{isTr ? 'Sunucu IP: ' : 'Server IP: '}</strong>{req.ip} {req.fromCache ? (isTr ? '(önbellekten)' : '(from cache)') : ''}
             </div>
           )}
           {req.error && (
             <div style={{ marginBottom: '6px', color: '#ef4444' }}>
-              <strong>Error: </strong>{req.error}
+              <strong>{isTr ? 'Hata: ' : 'Error: '}</strong>{req.error}
             </div>
           )}
           {req.responseHeaders && req.responseHeaders.length > 0 && (
             <div>
-              <strong style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Response Headers:</strong>
+              <strong style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>{isTr ? 'Yanıt Başlıkları:' : 'Response Headers:'}</strong>
               <div style={{ maxHeight: '160px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '4px' }}>
                 {req.responseHeaders.map((h, i) => (
                   <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '2px', wordBreak: 'break-all' }}>

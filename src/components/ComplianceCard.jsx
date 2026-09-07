@@ -1,32 +1,46 @@
 // src/components/ComplianceCard.jsx
 import React from 'react';
 
-const ComplianceCard = ({ compliance }) => {
+const STATUS_TR = {
+  'Compliant': 'Uyumlu',
+  'Needs Review': 'İnceleme Gerekli',
+  'Non-Compliant': 'Uyumsuz',
+  'Ready': 'Hazır / Uyumlu',
+  'Partial': 'Kısmi Uyumlu',
+  'Fails Requirements': 'Gereksinimleri Karşılamıyor',
+  'Pass': 'Başarılı',
+  'Warning': 'Uyarı',
+  'Fail': 'Başarısız'
+};
+
+const ComplianceCard = ({ compliance, lang = 'tr' }) => {
   if (!compliance) return null;
   const { kvkkGdpr, pciDss, owasp } = compliance;
+
+  const isTr = lang === 'tr';
 
   const items = [
     {
       title: 'KVKK / GDPR',
-      desc: 'Data Privacy & Cookies',
+      desc: isTr ? 'Veri Gizliliği & Çerezler' : 'Data Privacy & Cookies',
       score: kvkkGdpr.score,
-      status: kvkkGdpr.status,
+      status: isTr ? (STATUS_TR[kvkkGdpr.status] || kvkkGdpr.status) : kvkkGdpr.status,
       color: kvkkGdpr.color,
       issuesCount: kvkkGdpr.issues.length
     },
     {
       title: 'PCI-DSS v4.0',
-      desc: 'Payment Transport Security',
+      desc: isTr ? 'Ödeme İletişim Güvenliği' : 'Payment Transport Security',
       score: pciDss.score,
-      status: pciDss.status,
+      status: isTr ? (STATUS_TR[pciDss.status] || pciDss.status) : pciDss.status,
       color: pciDss.color,
       issuesCount: pciDss.issues.length
     },
     {
       title: 'OWASP Top 10',
-      desc: 'Application Hygiene',
+      desc: isTr ? 'Uygulama Güvenlik Hijyeni' : 'Application Hygiene',
       score: owasp.score,
-      status: owasp.status,
+      status: isTr ? (STATUS_TR[owasp.status] || owasp.status) : owasp.status,
       color: owasp.color,
       issuesCount: owasp.issues.length
     }
@@ -35,7 +49,7 @@ const ComplianceCard = ({ compliance }) => {
   return (
     <div style={{ marginTop: '20px' }}>
       <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
-        Compliance & Regulatory Readiness
+        {isTr ? 'Uyum & Mevzuat Uyumluluğu' : 'Compliance & Regulatory Readiness'}
       </h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
         {items.map((item, idx) => (
