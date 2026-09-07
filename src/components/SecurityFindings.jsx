@@ -156,7 +156,7 @@ const FindingCard = ({ finding }) => {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>🛠️</span> 1-Click Remediation Snippets
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> 1-Click Remediation Snippets
                 </span>
                 <button 
                   className="btn btn-outline" 
@@ -165,11 +165,24 @@ const FindingCard = ({ finding }) => {
                     fontSize: '0.72rem',
                     background: copied ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
                     color: copied ? '#34d399' : '#cbd5e1',
-                    borderColor: copied ? '#34d399' : 'rgba(255,255,255,0.2)'
+                    borderColor: copied ? '#34d399' : 'rgba(255,255,255,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}
                   onClick={() => handleCopy(snippets[activeServerIdx].code)}
                 >
-                  {copied ? '✓ Copied!' : '📋 Copy Code'}
+                  {copied ? (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      Copy Code
+                    </>
+                  )}
                 </button>
               </div>
 
@@ -218,8 +231,9 @@ const FindingCard = ({ finding }) => {
             </div>
           )}
 
-          <p className="sec-disclaimer-small" style={{ marginTop: '12px' }}>
-            ⚠ Manual verification required. This is not a confirmed vulnerability.
+          <p className="sec-disclaimer-small" style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Manual verification required. This is not a confirmed vulnerability.
           </p>
         </div>
       )}
@@ -509,7 +523,7 @@ const SecurityFindings = ({
         </>
       )}
 
-      {/* 🌐 Network Traffic Inspector Tab */}
+      {/* Network Traffic Inspector Tab */}
       {activeTab === 'network' && (
         <div style={{ marginTop: '12px' }}>
           {/* Status Banner */}
@@ -537,8 +551,9 @@ const SecurityFindings = ({
                   {isNetworkLoggingEnabled ? 'Live Target Traffic Recording Active' : 'Target Traffic Recording Paused'}
                 </span>
               </div>
-              <div style={{ color: '#94a3b8', fontSize: '0.73rem', paddingLeft: '16px' }}>
-                🎯 <strong>Isolated Scope:</strong>{' '}
+              <div style={{ color: '#94a3b8', fontSize: '0.73rem', paddingLeft: '16px', display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                <strong>Isolated Scope:</strong>{' '}
                 <span style={{ color: '#38bdf8' }}>
                   {networkTargetHost || (targetUrl ? (() => { try { return new URL(targetUrl).hostname; } catch { return targetUrl; } })() : 'Active Scanned Host')}
                 </span>{' '}
@@ -560,12 +575,22 @@ const SecurityFindings = ({
                   color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '5px',
+                  gap: '6px',
                   whiteSpace: 'nowrap',
                   boxShadow: isNetworkLoggingEnabled ? '0 2px 8px rgba(239, 68, 68, 0.4)' : '0 2px 8px rgba(16, 185, 129, 0.4)'
                 }}
               >
-                {isNetworkLoggingEnabled ? '⏹️ Stop Recording' : '▶️ Start Recording'}
+                {isNetworkLoggingEnabled ? (
+                  <>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                    Stop Recording
+                  </>
+                ) : (
+                  <>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Start Recording
+                  </>
+                )}
               </button>
             )}
           </div>
@@ -575,7 +600,7 @@ const SecurityFindings = ({
             <input
               type="text"
               className="input-field"
-              placeholder="🔍 Filter network requests by URL, path or method..."
+              placeholder="Filter network requests by URL, path or method..."
               value={netSearch}
               onChange={e => setNetSearch(e.target.value)}
               style={{ flex: 1, minWidth: '180px', padding: '6px 10px', fontSize: '0.8rem' }}
@@ -595,11 +620,12 @@ const SecurityFindings = ({
             {onClearNetwork && (
               <button
                 className="btn btn-outline"
-                style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '5px' }}
                 onClick={onClearNetwork}
                 title="Clear network logs"
               >
-                🗑️ Clear
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Clear
               </button>
             )}
           </div>

@@ -344,17 +344,25 @@ function App() {
             >
               {licenseData?.isAdmin ? (
                 <>
-                  <span>👑</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
                   <span>{t.adminBadge}</span>
                 </>
               ) : licenseData?.isPro ? (
                 <>
-                  <span>💎</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 3h12l4 6-10 13L2 9z"/>
+                  </svg>
                   <span>{t.proBadgeActive}</span>
                 </>
               ) : (
                 <>
-                  <span>🔑</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="7.5" cy="15.5" r="4.5"/>
+                    <path d="m21 2-9.6 9.6"/>
+                    <path d="m15.5 7.5 3 3L21 8"/>
+                  </svg>
                   <span>{t.getPro}</span>
                 </>
               )}
@@ -419,7 +427,9 @@ function App() {
       {!licenseData?.isPro && (
         <div className="license-gate-banner animate-slide-up">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.1rem' }}>⚡</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
             <div>
               <strong style={{ fontSize: '0.78rem', color: '#f59e0b' }}>{t.gateBannerTitle}: </strong>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.gateBannerDesc}</span>

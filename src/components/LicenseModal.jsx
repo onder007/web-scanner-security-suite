@@ -90,7 +90,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
               {t.currentPlan}:{' '}
             </span>
             <strong style={{ fontSize: '0.85rem', color: licenseData?.isPro ? '#10b981' : 'var(--text-primary)' }}>
-              {licenseData?.isAdmin ? '👑 Yönetici (Admin Aktif)' : licenseData?.isPro ? '💎 PRO Aktif' : t.freePlan}
+              {licenseData?.isAdmin ? 'Yönetici (Admin Aktif)' : licenseData?.isPro ? 'PRO Aktif' : t.freePlan}
             </strong>
           </div>
           {licenseData?.isPro && (
@@ -103,19 +103,19 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
         {/* Comparison Features */}
         <div className="license-features-list">
           <div className="license-feature-item">
-            <span className="check-icon">✓</span>
+            <span className="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg></span>
             <div><strong>{t.featVulnerability}</strong></div>
           </div>
           <div className="license-feature-item">
-            <span className="check-icon">✓</span>
+            <span className="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg></span>
             <div><strong>{t.featFixSnippets}</strong></div>
           </div>
           <div className="license-feature-item">
-            <span className="check-icon">✓</span>
+            <span className="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg></span>
             <div><strong>{t.featNetwork}</strong></div>
           </div>
           <div className="license-feature-item">
-            <span className="check-icon">✓</span>
+            <span className="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg></span>
             <div><strong>{t.featExport}</strong></div>
           </div>
         </div>
@@ -125,7 +125,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
           {licenseData?.isPro ? (
             <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(16, 185, 129, 0.06)', borderRadius: '8px' }}>
               <p style={{ margin: 0, color: '#10b981', fontSize: '0.8125rem', fontWeight: 600 }}>
-                ✓ {licenseData?.isAdmin ? 'Yönetici (Admin) Anahtarı Aktif — Tüm Özellikler Sınırsız Açık!' : 'Tüm Pro güvenlik ve tarama araçlarına sınırsız ömür boyu erişiminiz var!'}
+                {licenseData?.isAdmin ? 'Yönetici (Admin) Anahtarı Aktif — Tüm Özellikler Sınırsız Açık!' : 'Tüm Pro güvenlik ve tarama araçlarına sınırsız ömür boyu erişiminiz var!'}
               </p>
               <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '0.7rem', fontFamily: 'monospace' }}>
                 Key: {licenseData.key?.slice(0, 8)}••••••••
@@ -176,7 +176,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
               <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(59, 130, 246, 0.05)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.15)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    👑 Özel Admin Anahtarın:
+                    Özel Admin Anahtarı:
                   </span>
                   <button
                     type="button"
@@ -198,7 +198,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
 
           {errorMsg && (
             <div style={{ marginTop: '10px', color: '#ef4444', fontSize: '0.75rem', textAlign: 'center' }}>
-              ⚠️ {errorMsg}
+              {errorMsg}
             </div>
           )}
 
@@ -212,7 +212,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = '
         {/* Footer info */}
         <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-            🔒 Çevrimdışı ve Güvenli Doğrulama
+            Çevrimdışı ve Güvenli Doğrulama
           </span>
           <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
             0 Veritabanı, 0 Takipçi

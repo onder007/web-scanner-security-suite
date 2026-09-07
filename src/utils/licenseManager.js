@@ -66,7 +66,7 @@ export async function activateLicenseKey(rawKey, gumroadPermalink = '') {
       isPro: true,
       isAdmin: true,
       key: 'onder123',
-      plan: '👑 Admin Full Access',
+      plan: 'Admin Full Access',
       activatedAt: new Date().toISOString(),
       provider: 'Master Admin'
     };

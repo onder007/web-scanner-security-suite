@@ -118,18 +118,26 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
   return (
     <div className="glass-panel animate-slide-up sec-dashboard">
       <div className="dashboard-header">
-        <h2 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-          <span style={{ marginRight: '8px' }}>🛡</span>
+        <h2 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
           {lang === 'tr' ? 'Güvenlik Denetimi' : 'Security Scan'}
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
             className="btn btn-outline" 
-            style={{ padding: '4px 8px', fontSize: '0.72rem', borderRadius: '6px' }}
+            style={{ padding: '4px 8px', fontSize: '0.72rem', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
             onClick={openFullTab}
             title={lang === 'tr' ? 'Tam Sayfa Olarak Aç' : 'Open in Full Tab / Side View'}
           >
-            ⛶ {lang === 'tr' ? 'Genişlet' : 'Expand Tab'}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 3 21 3 21 9"/>
+              <polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/>
+              <line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+            {lang === 'tr' ? 'Genişlet' : 'Expand'}
           </button>
           <span
             className="status-badge"
@@ -167,7 +175,7 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
               disabled={isRunning}
               title="Auto-fill with current active tab URL"
             >
-              📍 {lang === 'tr' ? 'Aktif Sekmeyi Al' : 'Use Active Tab'}
+              {lang === 'tr' ? 'Aktif Sekmeyi Al' : 'Use Active Tab'}
             </button>
           )}
         </div>
@@ -186,7 +194,6 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
 
       {/* Passive only disclaimer */}
       <div className="sec-disclaimer">
-        <span className="sec-disclaimer-icon">ℹ</span>
         <span>
           {lang === 'tr' 
             ? 'Yalnızca pasif denetim — saldırı payloadı veya exploit içermez. Bulgular geliştirici doğrulaması içindir.'
@@ -250,10 +257,14 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
             {isCompleted && (
               <button 
                 className="btn btn-outline" 
-                style={{ padding: '4px 12px', fontSize: '0.78rem' }}
+                style={{ padding: '4px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                 onClick={() => generateSecurityPdf(findings, summary, stats, displayUrl)}
               >
-                📄 {lang === 'tr' ? 'PDF Rapor İndir' : 'Export PDF'}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                {lang === 'tr' ? 'PDF Rapor İndir' : 'Export PDF'}
               </button>
             )}
           </div>
@@ -414,10 +425,14 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
       {/* Idle empty state */}
       {isIdle && (
         <div className="sec-empty-state">
-          <div className="sec-empty-icon">🛡</div>
-          <p>Run a passive security assessment on the current page.</p>
+          <div className="sec-empty-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <p>{lang === 'tr' ? 'Mevcut sayfada pasif bir güvenlik denetimi çalıştırın.' : 'Run a passive security assessment on the current page.'}</p>
           <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>
-            Checks headers, cookies, HTTPS, mixed content, and potential input risk points.
+            {lang === 'tr' ? 'HTTP başlıkları, çerezler, HTTPS, karma içerik ve olası risk noktalarını denetler.' : 'Checks headers, cookies, HTTPS, mixed content, and potential input risk points.'}
           </p>
         </div>
       )}
