@@ -3,7 +3,8 @@
 
 const STORAGE_KEY = 'web_scanner_license';
 
-// Default mock/demo keys for quick local testing
+// Master Admin & Demo keys for instant offline access
+const ADMIN_KEYS = ['ONDER123', 'ONDER', 'ADMIN-MASTER-2026'];
 const DEMO_KEYS = ['PRO-TRIAL-2026', 'PRO-DEV-ACCESS', 'VIP-SECURITY-SUITE'];
 
 /**
@@ -13,14 +14,14 @@ export async function getLicenseData() {
   return new Promise((resolve) => {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
       chrome.storage.sync.get([STORAGE_KEY], (res) => {
-        resolve(res[STORAGE_KEY] || { isPro: false, key: null, activatedAt: null, plan: 'Free' });
+        resolve(res[STORAGE_KEY] || { isPro: false, isAdmin: false, key: null, activatedAt: null, plan: 'Free' });
       });
     } else {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        resolve(stored ? JSON.parse(stored) : { isPro: false, key: null, activatedAt: null, plan: 'Free' });
+        resolve(stored ? JSON.parse(stored) : { isPro: false, isAdmin: false, key: null, activatedAt: null, plan: 'Free' });
       } catch {
-        resolve({ isPro: false, key: null, activatedAt: null, plan: 'Free' });
+        resolve({ isPro: false, isAdmin: false, key: null, activatedAt: null, plan: 'Free' });
       }
     }
   });
@@ -46,20 +47,38 @@ export async function saveLicenseData(data) {
 
 /**
  * Activates a license key.
- * 1. Checks if it's a test/demo key or starts with 'PRO-'
- * 2. If Gumroad product permalink is configured, verifies via Gumroad API
- * 3. Persists the active PRO license
+ * 1. Checks if it's the Master Admin key 'onder123'
+ * 2. Checks if it's a test/demo key or starts with 'PRO-'
+ * 3. If Gumroad product permalink is configured, verifies via Gumroad API
+ * 4. Fallback for valid format keys
  */
 export async function activateLicenseKey(rawKey, gumroadPermalink = '') {
   const key = (rawKey || '').trim();
   if (!key) {
-    return { success: false, error: 'Please enter a valid license key.' };
+    return { success: false, error: 'Lütfen bir anahtar girin.' };
   }
 
-  // 1. Check local/demo key
-  if (DEMO_KEYS.includes(key.toUpperCase()) || key.toUpperCase().startsWith('PRO-')) {
+  const normalized = key.toUpperCase();
+
+  // 1. MASTER ADMIN KEY (e.g. onder123)
+  if (ADMIN_KEYS.includes(normalized) || normalized === 'ONDER123') {
     const licenseInfo = {
       isPro: true,
+      isAdmin: true,
+      key: 'onder123',
+      plan: '👑 Admin Full Access',
+      activatedAt: new Date().toISOString(),
+      provider: 'Master Admin'
+    };
+    await saveLicenseData(licenseInfo);
+    return { success: true, license: licenseInfo };
+  }
+
+  // 2. Demo / Dev keys
+  if (DEMO_KEYS.includes(normalized) || normalized.startsWith('PRO-')) {
+    const licenseInfo = {
+      isPro: true,
+      isAdmin: false,
       key,
       plan: 'Pro Lifetime',
       activatedAt: new Date().toISOString(),
@@ -69,7 +88,7 @@ export async function activateLicenseKey(rawKey, gumroadPermalink = '') {
     return { success: true, license: licenseInfo };
   }
 
-  // 2. Optional: Verify with Gumroad API if a permalink is provided
+  // 3. Optional: Verify with Gumroad API if a permalink is provided
   if (gumroadPermalink) {
     try {
       const response = await fetch('https://api.gumroad.com/v2/licenses/verify', {
@@ -86,6 +105,7 @@ export async function activateLicenseKey(rawKey, gumroadPermalink = '') {
       if (data.success && !data.purchase.refunded && !data.purchase.chargebacked) {
         const licenseInfo = {
           isPro: true,
+          isAdmin: false,
           key,
           plan: 'Pro Lifetime',
           email: data.purchase.email,
@@ -95,19 +115,20 @@ export async function activateLicenseKey(rawKey, gumroadPermalink = '') {
         await saveLicenseData(licenseInfo);
         return { success: true, license: licenseInfo };
       } else {
-        return { success: false, error: data.message || 'Invalid or revoked license key.' };
+        return { success: false, error: data.message || 'Geçersiz veya iptal edilmiş lisans anahtarı.' };
       }
     } catch (err) {
-      return { success: false, error: `Verification failed: ${err.message}` };
+      return { success: false, error: `Doğrulama hatası: ${err.message}` };
     }
   }
 
-  // 3. General fallback: Any alphanumeric key with at least 8 characters
+  // 4. General fallback: Any alphanumeric key with at least 8 characters
   if (key.length >= 8) {
     const licenseInfo = {
       isPro: true,
+      isAdmin: false,
       key,
-      plan: 'Pro License',
+      plan: 'Pro Lisans',
       activatedAt: new Date().toISOString(),
       provider: 'Verified Key'
     };
@@ -115,14 +136,14 @@ export async function activateLicenseKey(rawKey, gumroadPermalink = '') {
     return { success: true, license: licenseInfo };
   }
 
-  return { success: false, error: 'License key format is invalid. Keys must be at least 8 characters.' };
+  return { success: false, error: 'Anahtar formatı geçersiz. En az 8 karakter olmalıdır (veya onder123 admin anahtarı).' };
 }
 
 /**
  * Deactivates current license
  */
 export async function deactivateLicense() {
-  const blank = { isPro: false, key: null, activatedAt: null, plan: 'Free' };
+  const blank = { isPro: false, isAdmin: false, key: null, activatedAt: null, plan: 'Free' };
   await saveLicenseData(blank);
   return blank;
 }

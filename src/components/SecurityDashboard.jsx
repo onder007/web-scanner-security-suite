@@ -20,11 +20,33 @@ function isScannableUrl(url) {
   return url.startsWith('http://') || url.startsWith('https://');
 }
 
-const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onStop, currentTabUrl }) => {
+const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onStop, currentTabUrl, lang = 'tr', t }) => {
   const isRunning = status === 'running';
   const isIdle = status === 'idle';
   const isCompleted = status === 'completed' || status === 'cancelled' || status === 'error';
   const [targetInput, setTargetInput] = React.useState(currentTabUrl || '');
+
+  const severityLabels = lang === 'tr' ? {
+    critical: 'Kritik',
+    high: 'Yüksek',
+    medium: 'Orta',
+    low: 'Düşük',
+    info: 'Bilgi'
+  } : {
+    critical: 'Critical',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+    info: 'Info'
+  };
+
+  const dynamicSeverityConfig = {
+    critical: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', label: severityLabels.critical },
+    high:     { color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)', label: severityLabels.high },
+    medium:   { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', label: severityLabels.medium },
+    low:      { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', label: severityLabels.low },
+    info:     { color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.1)', label: severityLabels.info },
+  };
 
   React.useEffect(() => {
     if (currentTabUrl && currentTabUrl.startsWith('http') && !targetInput) {
@@ -45,13 +67,13 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
   // ── Chart Data Calculations ───────────────────────────────────────────────
   const severityData = useMemo(() => {
     return [
-      { name: 'Critical', value: summary.critical || 0, color: SEVERITY_CONFIG.critical.color },
-      { name: 'High', value: summary.high || 0, color: SEVERITY_CONFIG.high.color },
-      { name: 'Medium', value: summary.medium || 0, color: SEVERITY_CONFIG.medium.color },
-      { name: 'Low', value: summary.low || 0, color: SEVERITY_CONFIG.low.color },
-      { name: 'Info', value: summary.info || 0, color: SEVERITY_CONFIG.info.color }
+      { name: severityLabels.critical, value: summary.critical || 0, color: '#ef4444' },
+      { name: severityLabels.high, value: summary.high || 0, color: '#f97316' },
+      { name: severityLabels.medium, value: summary.medium || 0, color: '#f59e0b' },
+      { name: severityLabels.low, value: summary.low || 0, color: '#3b82f6' },
+      { name: severityLabels.info, value: summary.info || 0, color: '#94a3b8' }
     ].filter(item => item.value > 0);
-  }, [summary]);
+  }, [summary, lang]);
 
   const categoryData = useMemo(() => {
     const counts = {};
@@ -85,22 +107,29 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
     }
   };
 
+  const statusLabel = {
+    idle: lang === 'tr' ? 'HAZIR' : 'IDLE',
+    running: lang === 'tr' ? 'ÇALIŞIYOR' : 'RUNNING',
+    completed: lang === 'tr' ? 'TAMAMLANDI' : 'COMPLETED',
+    cancelled: lang === 'tr' ? 'İPTAL EDİLDİ' : 'CANCELLED',
+    error: lang === 'tr' ? 'HATA' : 'ERROR'
+  }[status] || status;
 
   return (
     <div className="glass-panel animate-slide-up sec-dashboard">
       <div className="dashboard-header">
-        <h2>
+        <h2 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
           <span style={{ marginRight: '8px' }}>🛡</span>
-          Security Scan
+          {lang === 'tr' ? 'Güvenlik Denetimi' : 'Security Scan'}
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
             className="btn btn-outline" 
-            style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px' }}
+            style={{ padding: '4px 8px', fontSize: '0.72rem', borderRadius: '6px' }}
             onClick={openFullTab}
-            title="Open in Full Tab / Side View"
+            title={lang === 'tr' ? 'Tam Sayfa Olarak Aç' : 'Open in Full Tab / Side View'}
           >
-            ⛶ Expand Tab
+            ⛶ {lang === 'tr' ? 'Genişlet' : 'Expand Tab'}
           </button>
           <span
             className="status-badge"
@@ -118,7 +147,7 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
               textTransform: 'uppercase',
             }}
           >
-            {status}
+            {statusLabel}
           </span>
         </div>
       </div>
@@ -126,8 +155,8 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
       {/* Target URL Input Bar */}
       <div style={{ marginTop: '14px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <span style={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Target Website URL
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {lang === 'tr' ? 'Hedef İnternet Sitesi URL' : 'Target Website URL'}
           </span>
           {currentTabUrl && currentTabUrl.startsWith('http') && (
             <button
@@ -138,7 +167,7 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
               disabled={isRunning}
               title="Auto-fill with current active tab URL"
             >
-              📍 Use Active Tab
+              📍 {lang === 'tr' ? 'Aktif Sekmeyi Al' : 'Use Active Tab'}
             </button>
           )}
         </div>
@@ -146,11 +175,11 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
           <input
             type="text"
             className="input-field"
-            placeholder="e.g. example.com or https://example.com"
+            placeholder={lang === 'tr' ? 'örn. ornek.com veya https://ornek.com' : 'e.g. example.com or https://example.com'}
             value={targetInput}
             onChange={e => setTargetInput(e.target.value)}
             disabled={isRunning}
-            style={{ flex: 1, padding: '9px 12px', fontSize: '0.85rem' }}
+            style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem' }}
           />
         </div>
       </div>
@@ -159,7 +188,9 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
       <div className="sec-disclaimer">
         <span className="sec-disclaimer-icon">ℹ</span>
         <span>
-          Passive scan only — no attack payloads, no exploits. Results require manual verification.
+          {lang === 'tr' 
+            ? 'Yalnızca pasif denetim — saldırı payloadı veya exploit içermez. Bulgular geliştirici doğrulaması içindir.'
+            : 'Passive scan only — no attack payloads, no exploits. Results require manual verification.'}
         </span>
       </div>
 
@@ -174,21 +205,21 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
             title={canScan ? 'Start passive security assessment' : 'Please enter a valid website URL'}
             style={!canScan ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            {canScan ? 'Start Security Scan' : 'Enter a Target URL to Scan'}
+            {canScan ? (lang === 'tr' ? 'Güvenlik Taramasını Başlat' : 'Start Security Scan') : (lang === 'tr' ? 'Taranacak Bir URL Girin' : 'Enter a Target URL to Scan')}
           </button>
         )}
         {isRunning && (
           <button className="btn btn-danger" id="sec-stop-btn" onClick={onStop}>
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10h6v4H9z" />
             </svg>
-            Stop Scan
+            {lang === 'tr' ? 'Taramayı Durdur' : 'Stop Scan'}
           </button>
         )}
       </div>
@@ -213,16 +244,16 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
         <div style={{ marginTop: '20px' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-              Security Score & Severities
+            <h3 style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+              {lang === 'tr' ? 'Güvenlik Skoru & Önem Dereceleri' : 'Security Score & Severities'}
             </h3>
             {isCompleted && (
               <button 
                 className="btn btn-outline" 
-                style={{ padding: '4px 12px', fontSize: '0.8rem' }}
+                style={{ padding: '4px 12px', fontSize: '0.78rem' }}
                 onClick={() => generateSecurityPdf(findings, summary, stats, displayUrl)}
               >
-                📄 Export PDF
+                📄 {lang === 'tr' ? 'PDF Rapor İndir' : 'Export PDF'}
               </button>
             )}
           </div>
@@ -234,7 +265,7 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              background: '#0d0f15',
+              background: 'var(--bg-surface-elevated)',
               borderRadius: '8px',
               border: `1px solid ${compliance.letterGrade.color}55`,
               padding: '10px 8px',
@@ -246,15 +277,15 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
               <span style={{ fontSize: '0.625rem', fontWeight: 600, color: compliance.letterGrade.color, marginTop: '4px', textAlign: 'center' }}>
                 {compliance.letterGrade.label}
               </span>
-              <span style={{ fontSize: '0.58rem', color: '#64748b', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Security Grade
+              <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {lang === 'tr' ? 'Güvenlik Notu' : 'Security Grade'}
               </span>
             </div>
 
             {/* Score Ring */}
             <div style={{ 
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              background: '#0d0f15', borderRadius: '8px', border: '1px solid var(--border-subtle)',
+              background: 'var(--bg-surface-elevated)', borderRadius: '8px', border: '1px solid var(--border-subtle)',
               padding: '10px 8px', position: 'relative'
             }}>
               <svg width="52" height="52" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
@@ -268,17 +299,19 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
               }}>
                 {securityScore}
               </div>
-              <span style={{ fontSize: '0.625rem', color: '#94a3b8', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Score</span>
+              <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {lang === 'tr' ? 'Skor' : 'Score'}
+              </span>
             </div>
 
             {/* Severity Cards */}
             <div className="sec-severity-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
-              {Object.entries(SEVERITY_CONFIG).map(([key, cfg]) => (
+              {Object.entries(dynamicSeverityConfig).map(([key, cfg]) => (
                 <div key={key} className="sec-severity-card" style={{ borderLeft: `2px solid ${cfg.color}`, padding: '8px 4px' }}>
                   <span className="sec-severity-count" style={{ color: cfg.color, fontSize: '1.15rem' }}>
                     {summary[key] || 0}
                   </span>
-                  <span className="sec-severity-label" style={{ color: '#94a3b8', fontSize: '0.625rem' }}>
+                  <span className="sec-severity-label" style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>
                     {cfg.label}
                   </span>
                 </div>
@@ -287,13 +320,15 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
           </div>
 
           <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-            Visual Reports
+            {lang === 'tr' ? 'Görsel Raporlar' : 'Visual Reports'}
           </h3>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
             {/* Pie Chart */}
-            <div style={{ height: '170px', background: '#0d0f15', borderRadius: '8px', border: '1px solid var(--border-subtle)', padding: '10px' }}>
-              <h4 style={{ fontSize: '0.6875rem', color: '#94a3b8', textAlign: 'center', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>By Severity</h4>
+            <div style={{ height: '170px', background: 'var(--bg-surface-elevated)', borderRadius: '8px', border: '1px solid var(--border-subtle)', padding: '10px' }}>
+              <h4 style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {lang === 'tr' ? 'Önem Derecesine Göre' : 'By Severity'}
+              </h4>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -310,24 +345,26 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#090a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '0.75rem' }}
-                    itemStyle={{ color: '#e2e8f0' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-medium)', borderRadius: '6px', fontSize: '0.75rem', color: 'var(--text-primary)' }}
+                    itemStyle={{ color: 'var(--text-primary)' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
 
             {/* Bar Chart */}
-            <div style={{ height: '170px', background: '#0d0f15', borderRadius: '8px', border: '1px solid var(--border-subtle)', padding: '10px' }}>
-              <h4 style={{ fontSize: '0.6875rem', color: '#94a3b8', textAlign: 'center', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>By Category</h4>
+            <div style={{ height: '170px', background: 'var(--bg-surface-elevated)', borderRadius: '8px', border: '1px solid var(--border-subtle)', padding: '10px' }}>
+              <h4 style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {lang === 'tr' ? 'Kategoriye Göre' : 'By Category'}
+              </h4>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
                   <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="name" type="category" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} axisLine={false} tickLine={false} />
                   <Tooltip 
                     cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                    contentStyle={{ backgroundColor: '#090a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '0.75rem' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-medium)', borderRadius: '6px', fontSize: '0.75rem', color: 'var(--text-primary)' }}
                   />
                   <Bar dataKey="count" fill="#3b82f6" radius={[0, 3, 3, 0]} barSize={10} />
                 </BarChart>
@@ -339,27 +376,27 @@ const SecurityDashboard = ({ status, stats, summary, findings = [], onStart, onS
           <div className="sec-stats-row" style={{ marginTop: '16px' }}>
             <div className="sec-stat-item">
               <span className="sec-stat-val">{stats.urlsAnalyzed}</span>
-              <span className="sec-stat-key">URLs Analyzed</span>
+              <span className="sec-stat-key">{lang === 'tr' ? 'Taranan URL' : 'URLs Analyzed'}</span>
             </div>
             <div className="sec-stat-item">
               <span className="sec-stat-val">{stats.paramsFound}</span>
-              <span className="sec-stat-key">Params Found</span>
+              <span className="sec-stat-key">{lang === 'tr' ? 'Parametreler' : 'Params Found'}</span>
             </div>
             <div className="sec-stat-item">
               <span className="sec-stat-val">{stats.formsFound}</span>
-              <span className="sec-stat-key">Forms Found</span>
+              <span className="sec-stat-key">{lang === 'tr' ? 'Formlar' : 'Forms Found'}</span>
             </div>
             <div className="sec-stat-item">
               <span className="sec-stat-val">{stats.headersChecked}</span>
-              <span className="sec-stat-key">Headers Checked</span>
+              <span className="sec-stat-key">{lang === 'tr' ? 'Başlıklar' : 'Headers Checked'}</span>
             </div>
             <div className="sec-stat-item">
               <span className="sec-stat-val">{stats.cookiesChecked}</span>
-              <span className="sec-stat-key">Cookies Checked</span>
+              <span className="sec-stat-key">{lang === 'tr' ? 'Çerezler' : 'Cookies Checked'}</span>
             </div>
             <div className="sec-stat-item">
               <span className="sec-stat-val">{stats.mixedContent}</span>
-              <span className="sec-stat-key">Mixed Content</span>
+              <span className="sec-stat-key">{lang === 'tr' ? 'Karma İçerik' : 'Mixed Content'}</span>
             </div>
           </div>
 

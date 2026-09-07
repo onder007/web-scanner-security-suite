@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const SettingsPanel = ({ options, setOptions, disabled }) => {
+const SettingsPanel = ({ options, setOptions, disabled, t }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleChange = (e) => {
@@ -24,8 +24,8 @@ const SettingsPanel = ({ options, setOptions, disabled }) => {
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
-          <h2 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-            Crawler Engine Settings
+          <h2 style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+            {t?.crawlerSettings || 'Crawler Engine Settings'}
           </h2>
           <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
             ({options.maxConcurrency} threads, {options.timeout}ms)
@@ -52,7 +52,7 @@ const SettingsPanel = ({ options, setOptions, disabled }) => {
         <div className="settings-body animate-slide-up" style={{ marginTop: '14px' }}>
           <div className="settings-grid">
             <div className="settings-group">
-              <label>Max Concurrency (Threads)</label>
+              <label>{t?.maxConcurrency || 'Max Concurrency (Threads)'}</label>
               <input 
                 type="number" 
                 className="input-field" 
@@ -64,7 +64,7 @@ const SettingsPanel = ({ options, setOptions, disabled }) => {
               />
             </div>
             <div className="settings-group">
-              <label>Request Timeout (ms)</label>
+              <label>{t?.timeout || 'Request Timeout (ms)'}</label>
               <input 
                 type="number" 
                 className="input-field" 
@@ -76,7 +76,7 @@ const SettingsPanel = ({ options, setOptions, disabled }) => {
               />
             </div>
             <div className="settings-group">
-              <label>Delay Between Requests (ms)</label>
+              <label>{t?.delay || 'Delay Between Requests (ms)'}</label>
               <input 
                 type="number" 
                 className="input-field" 
@@ -88,7 +88,7 @@ const SettingsPanel = ({ options, setOptions, disabled }) => {
               />
             </div>
             <div className="settings-group">
-              <label>Bot User-Agent Header</label>
+              <label>{t?.userAgent || 'Bot User-Agent Header'}</label>
               <input 
                 type="text" 
                 className="input-field" 
@@ -101,7 +101,7 @@ const SettingsPanel = ({ options, setOptions, disabled }) => {
           </div>
           
           <div className="settings-group" style={{ marginTop: '12px' }}>
-            <label>Exclude URL Patterns (comma-separated, e.g. /wp-admin, /cart, /images)</label>
+            <label>{t?.excludePatterns || 'Exclude URL Patterns (comma-separated, e.g. /wp-admin, /cart)'}</label>
             <input 
               type="text" 
               className="input-field" 
@@ -123,7 +123,7 @@ const SettingsPanel = ({ options, setOptions, disabled }) => {
                 onChange={handleChange}
                 disabled={disabled}
               />
-              <span>Ignore robots.txt directives during scan</span>
+              <span>{t?.ignoreRobots || 'Ignore robots.txt directives during scan'}</span>
             </label>
           </div>
         </div>

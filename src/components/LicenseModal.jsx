@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { activateLicenseKey, deactivateLicense } from '../utils/licenseManager';
+import { translations } from '../utils/i18n';
 
-const GUMROAD_STORE_URL = 'https://gumroad.com'; // User can replace with their actual store link
+const GUMROAD_STORE_URL = 'https://gumroad.com'; // Kendi Gumroad veya LemonSqueezy linkiniz
 
-const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated }) => {
+const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated, lang = 'tr' }) => {
   const [keyInput, setKeyInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const t = translations[lang] || translations.tr;
 
   if (!isOpen) return null;
 
   const handleActivate = async (keyToUse) => {
     const key = keyToUse || keyInput;
     if (!key.trim()) {
-      setErrorMsg('Please enter a license key.');
+      setErrorMsg(t.errorKeyRequired);
       return;
     }
     setErrorMsg('');
@@ -25,23 +28,26 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated }) => {
     setLoading(false);
 
     if (res.success) {
-      setSuccessMsg('✨ Pro activated successfully! All premium security features unlocked.');
+      setSuccessMsg(t.successActivated);
       onLicenseUpdated(res.license);
       setTimeout(() => {
         onClose();
         setSuccessMsg('');
-      }, 1400);
+      }, 1500);
     } else {
-      setErrorMsg(res.error || 'Activation failed.');
+      setErrorMsg(res.error || 'Aktivasyon başarısız.');
     }
   };
 
   const handleDeactivate = async () => {
-    if (window.confirm('Are you sure you want to deactivate your PRO license on this browser?')) {
+    const msg = lang === 'tr' 
+      ? 'Bu tarayıcıdaki lisansı kaldırmak istediğinize emin misiniz?' 
+      : 'Are you sure you want to deactivate your license on this browser?';
+    if (window.confirm(msg)) {
       const blank = await deactivateLicense();
       onLicenseUpdated(blank);
       setKeyInput('');
-      setSuccessMsg('License deactivated.');
+      setSuccessMsg(lang === 'tr' ? 'Lisans kaldırıldı.' : 'License deactivated.');
       setTimeout(() => setSuccessMsg(''), 2000);
     }
   };
@@ -58,15 +64,15 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated }) => {
               </svg>
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc' }}>
-                Web Scanner <span className="pro-gradient-text">PRO</span>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {t.licenseTitle} <span className="pro-gradient-text">PRO / ADMIN</span>
               </h3>
-              <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>
-                Instant activation — No passwords, no sign-up hassle
+              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {t.licenseSubtitle}
               </p>
             </div>
           </div>
-          <button className="license-close-btn" onClick={onClose} aria-label="Close">
+          <button className="license-close-btn" onClick={onClose} aria-label="Kapat">
             &times;
           </button>
         </div>
@@ -76,18 +82,20 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated }) => {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '10px 14px', borderRadius: '8px',
           background: licenseData?.isPro ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.04)',
-          border: licenseData?.isPro ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(255, 255, 255, 0.08)',
+          border: licenseData?.isPro ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid var(--border-subtle)',
           marginTop: '14px', marginBottom: '16px'
         }}>
           <div>
-            <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b' }}>Current Plan: </span>
-            <strong style={{ fontSize: '0.85rem', color: licenseData?.isPro ? '#34d399' : '#e2e8f0' }}>
-              {licenseData?.isPro ? '💎 PRO Active' : 'Free Standard'}
+            <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+              {t.currentPlan}:{' '}
+            </span>
+            <strong style={{ fontSize: '0.85rem', color: licenseData?.isPro ? '#10b981' : 'var(--text-primary)' }}>
+              {licenseData?.isAdmin ? '👑 Yönetici (Admin Aktif)' : licenseData?.isPro ? '💎 PRO Aktif' : t.freePlan}
             </strong>
           </div>
           {licenseData?.isPro && (
             <button className="btn btn-outline" style={{ fontSize: '0.7rem', padding: '3px 8px' }} onClick={handleDeactivate}>
-              Deactivate
+              {t.deactivate}
             </button>
           )}
         </div>
@@ -96,27 +104,19 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated }) => {
         <div className="license-features-list">
           <div className="license-feature-item">
             <span className="check-icon">✓</span>
-            <div>
-              <strong>Deep Vulnerability Engine:</strong> OWASP, XSS, CSRF &amp; Auth leak checks
-            </div>
+            <div><strong>{t.featVulnerability}</strong></div>
           </div>
           <div className="license-feature-item">
             <span className="check-icon">✓</span>
-            <div>
-              <strong>1-Click Fix Snippets:</strong> Ready-to-paste Nginx, Apache, Express &amp; Caddy configs
-            </div>
+            <div><strong>{t.featFixSnippets}</strong></div>
           </div>
           <div className="license-feature-item">
             <span className="check-icon">✓</span>
-            <div>
-              <strong>Live Network Traffic Inspector:</strong> Packet capture, header tampering inspection
-            </div>
+            <div><strong>{t.featNetwork}</strong></div>
           </div>
           <div className="license-feature-item">
             <span className="check-icon">✓</span>
-            <div>
-              <strong>Executive Export:</strong> Instant PDF security audit &amp; CSV reporting
-            </div>
+            <div><strong>{t.featExport}</strong></div>
           </div>
         </div>
 
@@ -124,10 +124,10 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated }) => {
         <div className="license-action-section">
           {licenseData?.isPro ? (
             <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(16, 185, 129, 0.06)', borderRadius: '8px' }}>
-              <p style={{ margin: 0, color: '#6ee7b7', fontSize: '0.8125rem', fontWeight: 600 }}>
-                ✓ You have unrestricted lifetime access to all Pro security tools!
+              <p style={{ margin: 0, color: '#10b981', fontSize: '0.8125rem', fontWeight: 600 }}>
+                ✓ {licenseData?.isAdmin ? 'Yönetici (Admin) Anahtarı Aktif — Tüm Özellikler Sınırsız Açık!' : 'Tüm Pro güvenlik ve tarama araçlarına sınırsız ömür boyu erişiminiz var!'}
               </p>
-              <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '0.7rem', fontFamily: 'monospace' }}>
+              <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '0.7rem', fontFamily: 'monospace' }}>
                 Key: {licenseData.key?.slice(0, 8)}••••••••
               </p>
             </div>
@@ -147,7 +147,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated }) => {
                     <circle cx="20" cy="21" r="1"></circle>
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                   </svg>
-                  Get License Key ($14 Lifetime)
+                  {t.getLicenseKeyBtn}
                 </a>
               </div>
 
@@ -156,7 +156,7 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated }) => {
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="Enter license key (e.g. PRO-XXXX-XXXX)"
+                  placeholder={t.licenseInputPlaceholder}
                   value={keyInput}
                   onChange={(e) => setKeyInput(e.target.value)}
                   style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}
@@ -166,49 +166,56 @@ const LicenseModal = ({ isOpen, onClose, licenseData, onLicenseUpdated }) => {
                   className="btn btn-primary"
                   onClick={() => handleActivate()}
                   disabled={loading}
-                  style={{ minWidth: '90px' }}
+                  style={{ minWidth: '95px' }}
                 >
-                  {loading ? 'Verifying...' : 'Activate'}
+                  {loading ? t.verifying : t.activateBtn}
                 </button>
               </div>
 
-              {/* Demo test key helper */}
-              <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Testing without buying?</span>
-                <button
-                  type="button"
-                  onClick={() => handleActivate('PRO-TRIAL-2026')}
-                  style={{
-                    background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.7rem',
-                    cursor: 'pointer', textDecoration: 'underline', padding: 0
-                  }}
-                >
-                  Apply Test License (PRO-TRIAL-2026)
-                </button>
+              {/* Quick Admin Key: onder123 */}
+              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(59, 130, 246, 0.05)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.15)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    👑 Özel Admin Anahtarın:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleActivate('onder123')}
+                    style={{
+                      background: 'rgba(59, 130, 246, 0.15)', border: '1px solid #3b82f6', color: '#60a5fa', fontSize: '0.72rem',
+                      cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', fontWeight: 600
+                    }}
+                  >
+                    onder123 Anahtarını Uygula
+                  </button>
+                </div>
+                <span style={{ fontSize: '0.67rem', color: 'var(--text-muted)' }}>
+                  (Kendi uzantında onder123 yazarak tüm Pro özelliklerini anında açabilirsin)
+                </span>
               </div>
             </>
           )}
 
           {errorMsg && (
-            <div style={{ marginTop: '10px', color: '#f87171', fontSize: '0.75rem', textAlign: 'center' }}>
+            <div style={{ marginTop: '10px', color: '#ef4444', fontSize: '0.75rem', textAlign: 'center' }}>
               ⚠️ {errorMsg}
             </div>
           )}
 
           {successMsg && (
-            <div style={{ marginTop: '10px', color: '#34d399', fontSize: '0.75rem', textAlign: 'center', fontWeight: 600 }}>
+            <div style={{ marginTop: '10px', color: '#10b981', fontSize: '0.75rem', textAlign: 'center', fontWeight: 600 }}>
               {successMsg}
             </div>
           )}
         </div>
 
         {/* Footer info */}
-        <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#64748b' }}>
-            🔒 Instant offline/online verification
+        <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+            🔒 Çevrimdışı ve Güvenli Doğrulama
           </span>
-          <span style={{ fontSize: '0.6875rem', color: '#64748b' }}>
-            Zero cookies &amp; trackers
+          <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+            0 Veritabanı, 0 Takipçi
           </span>
         </div>
       </div>

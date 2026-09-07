@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 
-const ResultsTable = ({ results }) => {
+const ResultsTable = ({ results, t }) => {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
 
@@ -58,31 +58,37 @@ const ResultsTable = ({ results }) => {
   return (
     <div className="glass-panel animate-slide-up" style={{ animationDelay: '0.2s' }}>
       <div className="results-header">
-        <h2>Scan Results ({filteredResults.length})</h2>
+        <h2 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+          {t?.scanResults || 'Scan Results'} ({filteredResults.length})
+        </h2>
         <div className="filters">
           <input 
             type="text" 
-            placeholder="Search URL..." 
+            placeholder={t?.searchUrl || 'Search URL...'} 
             className="input-field" 
-            style={{ width: '200px', padding: '8px 12px' }}
+            style={{ width: '180px', padding: '6px 10px', fontSize: '0.78rem' }}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
           <select 
             className="input-field" 
-            style={{ width: 'auto', padding: '8px 12px' }}
+            style={{ width: 'auto', padding: '6px 10px', fontSize: '0.78rem' }}
             value={filter}
             onChange={e => setFilter(e.target.value)}
           >
-            <option value="all">All Statuses</option>
-            <option value="success">Only Success (200)</option>
-            <option value="error">Only Errors (4xx, 5xx)</option>
-            <option value="404">Only 404</option>
-            <option value="500">Only 5xx</option>
-            <option value="redirect">Only Redirects (3xx)</option>
+            <option value="all">{t?.allStatuses || 'All Statuses'}</option>
+            <option value="success">{t?.onlySuccess || 'Only Success (200)'}</option>
+            <option value="error">{t?.onlyErrors || 'Only Errors (4xx, 5xx)'}</option>
+            <option value="404">{t?.only404 || 'Only 404'}</option>
+            <option value="500">{t?.only500 || 'Only 5xx'}</option>
+            <option value="redirect">{t?.onlyRedirects || 'Only Redirects (3xx)'}</option>
           </select>
-          <button className="btn btn-outline" onClick={exportCSV}>Export CSV</button>
-          <button className="btn btn-outline" onClick={exportJSON}>Export JSON</button>
+          <button className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '5px 10px' }} onClick={exportCSV}>
+            {t?.exportCSV || 'Export CSV'}
+          </button>
+          <button className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '5px 10px' }} onClick={exportJSON}>
+            {t?.exportJSON || 'Export JSON'}
+          </button>
         </div>
       </div>
 
@@ -90,18 +96,18 @@ const ResultsTable = ({ results }) => {
         <table>
           <thead>
             <tr>
-              <th>URL</th>
-              <th>Status</th>
-              <th>Time (ms)</th>
-              <th>Content Type</th>
-              <th>Found At (Referer)</th>
+              <th>{t?.tableColUrl || 'URL'}</th>
+              <th>{t?.tableColStatus || 'Status'}</th>
+              <th>{t?.tableColTime || 'Time (ms)'}</th>
+              <th>{t?.tableColType || 'Content Type'}</th>
+              <th>{t?.tableColReferer || 'Found At (Referer)'}</th>
             </tr>
           </thead>
           <tbody>
             {filteredResults.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                  No results found matching criteria.
+                <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  {search ? 'Eşleşen sonuç bulunamadı.' : 'Henüz taranmış link sonucu yok.'}
                 </td>
               </tr>
             ) : (

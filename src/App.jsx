@@ -8,14 +8,42 @@ import SecurityFindings from './components/SecurityFindings.jsx';
 import SecurityHistory from './components/SecurityHistory.jsx';
 import LicenseModal from './components/LicenseModal.jsx';
 import { getLicenseData } from './utils/licenseManager';
+import { translations } from './utils/i18n';
 import './styles/App.css';
 
 function App() {
+  // ── Theme & Language State ──────────────────────────────────────────────────
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('web_scanner_theme') || 'dark';
+  });
+  const [lang, setLang] = useState(() => {
+    return localStorage.getItem('web_scanner_lang') || 'tr';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('web_scanner_theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('web_scanner_lang', lang);
+  }, [lang]);
+
+  const t = translations[lang] || translations.tr;
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  const toggleLang = () => {
+    setLang(prev => prev === 'tr' ? 'en' : 'tr');
+  };
+
   // ── Main Tab State ──────────────────────────────────────────────────────────
   const [activeMainTab, setActiveMainTab] = useState('deadlinks'); // 'deadlinks' | 'security' | 'history'
 
   // ── Licensing / Pro Tier State ─────────────────────────────────────────────
-  const [licenseData, setLicenseData] = useState({ isPro: false, key: null, plan: 'Free' });
+  const [licenseData, setLicenseData] = useState({ isPro: false, isAdmin: false, key: null, plan: 'Free' });
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState(false);
 
   useEffect(() => {
@@ -229,14 +257,32 @@ function App() {
             </svg>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h1>Web Scanner</h1>
+                <h1>{t.appName}</h1>
                 <span className="header-badge">v1.1</span>
               </div>
-              <p className="subtitle">Passive Security Audit &amp; Broken Link Inspector</p>
+              <p className="subtitle">{t.appSubtitle}</p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Language & Theme Controls */}
+            <div className="header-tools-group">
+              <button 
+                className="header-icon-btn" 
+                onClick={toggleLang}
+                title={lang === 'tr' ? 'Switch to English' : 'Türkçeye Geç'}
+              >
+                {lang === 'tr' ? '🇹🇷 TR' : '🇬🇧 EN'}
+              </button>
+              <button 
+                className="header-icon-btn" 
+                onClick={toggleTheme}
+                title={theme === 'dark' ? t.themeLight : t.themeDark}
+              >
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
+            </div>
+
             {/* Main Tab Navigation */}
             <div className="main-tab-bar">
               <button
@@ -248,7 +294,7 @@ function App() {
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                 </svg>
-                Broken Links
+                {t.tabBrokenLinks}
               </button>
               <button
                 id="tab-security"
@@ -258,7 +304,7 @@ function App() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
-                Security Audit
+                {t.tabSecurity}
               </button>
               <button
                 id="tab-history"
@@ -269,25 +315,30 @@ function App() {
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
-                Audit History
+                {t.tabHistory}
               </button>
             </div>
 
-            {/* Pro Badge / Upgrade Button */}
+            {/* Pro / Admin Badge Button */}
             <button
               className={`pro-badge-btn ${licenseData?.isPro ? 'pro-badge-active' : ''}`}
               onClick={() => setIsLicenseModalOpen(true)}
-              title={licenseData?.isPro ? 'Pro Active — Click for license details' : 'Upgrade to Pro License'}
+              title={licenseData?.isPro ? 'Lisans Detayları' : 'Lisans Etkinleştir'}
             >
-              {licenseData?.isPro ? (
+              {licenseData?.isAdmin ? (
                 <>
                   <span>👑</span>
-                  <span>PRO ACTIVE</span>
+                  <span>{t.adminBadge}</span>
+                </>
+              ) : licenseData?.isPro ? (
+                <>
+                  <span>💎</span>
+                  <span>{t.proBadgeActive}</span>
                 </>
               ) : (
                 <>
                   <span>💎</span>
-                  <span>PRO</span>
+                  <span>{t.getPro}</span>
                 </>
               )}
             </button>
@@ -300,7 +351,7 @@ function App() {
             <input
               type="url"
               className="input-field url-input"
-              placeholder="https://example.com"
+              placeholder={t.urlPlaceholder}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               disabled={status === 'running' || status === 'paused'}
@@ -313,7 +364,7 @@ function App() {
                   <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
                     <polygon points="5 3 19 12 5 21 5 3"/>
                   </svg>
-                  Scan Links
+                  {t.scanLinks}
                 </button>
               ) : status === 'running' ? (
                 <>
@@ -322,13 +373,13 @@ function App() {
                       <rect x="6" y="4" width="4" height="16"/>
                       <rect x="14" y="4" width="4" height="16"/>
                     </svg>
-                    Pause
+                    {t.pause}
                   </button>
                   <button className="btn btn-danger" id="deadlinks-stop-btn" onClick={handleStop}>
                     <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
                       <rect x="5" y="5" width="14" height="14" rx="2"/>
                     </svg>
-                    Stop
+                    {t.stop}
                   </button>
                 </>
               ) : status === 'paused' ? (
@@ -337,9 +388,9 @@ function App() {
                     <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
                       <polygon points="5 3 19 12 5 21 5 3"/>
                     </svg>
-                    Resume
+                    {t.resume}
                   </button>
-                  <button className="btn btn-danger" id="deadlinks-stop-btn-2" onClick={handleStop}>Stop</button>
+                  <button className="btn btn-danger" id="deadlinks-stop-btn-2" onClick={handleStop}>{t.stop}</button>
                 </>
               ) : null}
             </div>
@@ -347,16 +398,36 @@ function App() {
         )}
       </header>
 
+      {/* Prominent Key Gate Banner if not PRO */}
+      {!licenseData?.isPro && (
+        <div className="license-gate-banner animate-slide-up">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.1rem' }}>⚡</span>
+            <div>
+              <strong style={{ fontSize: '0.78rem', color: '#f59e0b' }}>{t.gateBannerTitle}: </strong>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.gateBannerDesc}</span>
+            </div>
+          </div>
+          <button 
+            className="btn btn-primary" 
+            style={{ fontSize: '0.72rem', padding: '4px 12px', height: '26px' }}
+            onClick={() => setIsLicenseModalOpen(true)}
+          >
+            {t.gateBannerBtn}
+          </button>
+        </div>
+      )}
+
       {/* ── Dead Links Tab Content ─────────────────────────────────────────── */}
       {activeMainTab === 'deadlinks' && (
         <>
           <div className="main-content" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
-            <Dashboard stats={stats} status={status} />
-            <SettingsPanel options={options} setOptions={setOptions} disabled={status === 'running' || status === 'paused'} />
+            <Dashboard stats={stats} status={status} t={t} />
+            <SettingsPanel options={options} setOptions={setOptions} disabled={status === 'running' || status === 'paused'} t={t} />
             <LiveLogs logs={logs} />
           </div>
           <div className="results-container">
-            <ResultsTable results={results} />
+            <ResultsTable results={results} t={t} />
           </div>
         </>
       )}
@@ -372,6 +443,8 @@ function App() {
             onStart={handleSecurityStart}
             onStop={handleSecurityStop}
             currentTabUrl={currentTabUrl}
+            t={t}
+            lang={lang}
           />
           <SecurityFindings
             findings={secFindings}
@@ -399,6 +472,8 @@ function App() {
               setNetworkLogs([]);
             }}
             isRunning={secStatus === 'running'}
+            t={t}
+            lang={lang}
           />
         </div>
       )}
@@ -406,7 +481,7 @@ function App() {
       {/* ── History Tab Content ────────────────────────────────────────────── */}
       {activeMainTab === 'history' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
-          <SecurityHistory />
+          <SecurityHistory t={t} lang={lang} />
         </div>
       )}
 
@@ -416,6 +491,7 @@ function App() {
         onClose={() => setIsLicenseModalOpen(false)}
         licenseData={licenseData}
         onLicenseUpdated={setLicenseData}
+        lang={lang}
       />
     </div>
   );
